@@ -1,0 +1,2635 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>더캔버스 포트폴리오 아카이빙 시스템</title>
+  <style>
+    :root {
+      --bg: #f4f4f1;
+      --surface: #ffffff;
+      --surface2: #ebebea;
+      --border: #d6d6d2;
+      --accent: #5c7a00;
+      --accent2: #0070a0;
+      --text: #1a1a18;
+      --muted: #76766e;
+      --new: #cc0038;
+      --radius: 10px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(244,244,241,0.92);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 32px; height: 64px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 700; letter-spacing: 0.04em; }
+    .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+    .header-meta { display: flex; align-items: center; gap: 20px; font-size: 12px; color: var(--muted); }
+    .status-badge { display: flex; align-items: center; gap: 6px; background: rgba(92,122,0,0.08); border: 1px solid rgba(92,122,0,0.25); border-radius: 20px; padding: 4px 12px; color: var(--accent); font-size: 11px; font-weight: 600; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); animation: pulse 2s infinite; }
+
+    /* ── STATS ── */
+    .stats-bar { display: flex; gap: 1px; background: var(--border); border-bottom: 1px solid var(--border); }
+    .stat-item { flex: 1; background: var(--surface); padding: 20px 28px; display: flex; flex-direction: column; gap: 4px; }
+    .stat-value { font-size: 28px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+    .stat-value.accent { color: var(--accent); }
+    .stat-value.accent2 { color: var(--accent2); }
+    .stat-value.red { color: var(--new); }
+    .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+
+    /* ── CONTROLS ── */
+    .controls { padding: 24px 32px 0; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .tag-filters { padding: 10px 32px 0; display: flex; gap: 8px; flex-wrap: wrap; }
+    .tag-filter-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; text-transform: uppercase; }
+    .tag-filter-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .tag-filter-btn.active { background: var(--accent2); border-color: var(--accent2); color: #fff; }
+    /* ── COLOR FILTER ── */
+    .color-filters { padding: 10px 32px 0; display: flex; align-items: center; gap: 8px; }
+    .color-filter-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); font-weight: 600; margin-right: 4px; }
+    .color-swatch { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; border: 2.5px solid transparent; outline: 2px solid transparent; transition: transform 0.15s, outline 0.15s; flex-shrink: 0; }
+    .color-swatch:hover { transform: scale(1.25); }
+    .color-swatch.active { outline: 2px solid var(--text); outline-offset: 2px; transform: scale(1.2); }
+    .color-swatch-all { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; background: conic-gradient(#e83030,#e87830,#d4b800,#3ca050,#20a0a0,#2060d0,#8040c0,#d040a0,#e83030); border: 2.5px solid transparent; outline: 2px solid transparent; transition: transform 0.15s, outline 0.15s; flex-shrink: 0; }
+    .color-swatch-all:hover { transform: scale(1.25); }
+    .color-swatch-all.active { outline: 2px solid var(--text); outline-offset: 2px; transform: scale(1.2); }
+    .filter-btn { background: var(--surface); border: 1px solid var(--border); color: var(--muted); padding: 7px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em; }
+    .filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 700; }
+    .search-wrap { margin-left: auto; position: relative; }
+    .search-wrap input { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 7px 16px 7px 36px; border-radius: 20px; font-size: 12px; width: 200px; outline: none; transition: border-color 0.15s; }
+    .search-wrap input::placeholder { color: var(--muted); }
+    .search-wrap input:focus { border-color: var(--accent2); }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; }
+
+    /* ── SECTION LABEL ── */
+    .section-header { padding: 28px 32px 16px; display: flex; align-items: center; gap: 12px; }
+    .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: 0.15em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+    .section-line { flex: 1; height: 1px; background: var(--border); }
+
+    /* ── GALLERY GRID ── */
+    .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 2px; padding: 0 32px 2px; }
+    .card.hidden { display: none !important; }
+    .card { background: var(--surface); overflow: hidden; position: relative; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; aspect-ratio: 16/10; }
+    .card:hover { transform: scale(1.015); z-index: 2; box-shadow: 0 8px 40px rgba(0,0,0,0.6); }
+    .card-thumb { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s; }
+    .card:hover .card-thumb { transform: scale(1.05); }
+    .card-overlay { position: absolute; inset: 0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 55%); padding: 16px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+    .card-company { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: rgba(255,255,255,0.55); font-weight: 600; }
+    .card-title { font-size: 14px; font-weight: 700; line-height: 1.3; }
+    .card-date { font-size: 10px; color: rgba(255,255,255,0.4); }
+    .card-new { position: absolute; top: 12px; right: 12px; background: var(--new); color: #fff; font-size: 9px; font-weight: 800; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+    .card-source { position: absolute; top: 12px; left: 12px; background: rgba(0,0,0,0.50); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); font-size: 9px; font-weight: 600; letter-spacing: 0.08em; padding: 3px 8px; border-radius: 3px; text-transform: uppercase; }
+
+    .card-meta-bar { position: absolute; bottom: 8px; right: 8px; display: flex; align-items: center; gap: 4px; z-index: 2; }
+    .card-color-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+    .card-tags { position: absolute; top: 12px; left: 12px; display: flex; flex-wrap: wrap; gap: 4px; max-width: 70%; z-index: 2; }
+    .card-tag { background: rgba(0,0,0,0.55); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.15); color: rgba(255,255,255,0.85); font-size: 9px; font-weight: 600; padding: 3px 7px; border-radius: 3px; letter-spacing: 0.06em; text-transform: uppercase; }
+    /* hover: 상세보기 힌트 */
+    .card-hover-hint { position: absolute; inset: 0; background: rgba(0,0,0,0); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.2s, background 0.2s; }
+    .card:hover .card-hover-hint { opacity: 1; background: rgba(0,0,0,0.25); }
+    .card-hover-hint span { background: rgba(255,255,255,0.12); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.2); color: #fff; font-size: 12px; font-weight: 600; padding: 8px 20px; border-radius: 20px; letter-spacing: 0.05em; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 24px 32px 8px; }
+    .pg-btn { min-width: 36px; height: 36px; padding: 0 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
+    .pg-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .pg-btn.active { background: var(--accent); border-color: var(--accent); color: #000; }
+    .pg-btn:disabled { opacity: 0.3; cursor: default; }
+    .pg-info { font-size: 11px; color: var(--muted); padding: 0 8px; }
+
+    /* ── ARCHIVE GRID ── */
+    .archive-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; padding: 0 32px 40px; }
+    .archive-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 8px; cursor: pointer; transition: border-color 0.15s, background 0.15s, transform 0.15s; }
+    .archive-card:hover { border-color: var(--accent2); background: rgba(0,112,160,0.06); transform: translateY(-2px); }
+    .archive-icon { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .archive-name { font-size: 13px; font-weight: 700; }
+    .archive-meta { font-size: 10px; color: var(--muted); line-height: 1.5; }
+    .archive-count { margin-top: auto; font-size: 11px; color: var(--accent2); font-weight: 600; }
+    .archive-view-hint { font-size: 10px; color: var(--muted); opacity: 0; transition: opacity 0.15s; }
+    .archive-card:hover .archive-view-hint { opacity: 1; }
+
+    /* ── ACCORDION ── */
+    .acc-wrap { margin: 0 32px 8px; }
+    .acc-header {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 13px 20px; display: flex; align-items: center; gap: 10px;
+      cursor: pointer; user-select: none; transition: background 0.15s, border-color 0.15s;
+    }
+    .acc-header:hover { background: var(--surface2); border-color: rgba(0,0,0,0.12); }
+    .acc-label { font-size: 13px; font-weight: 700; }
+    .acc-sub { font-size: 11px; color: var(--muted); }
+    .acc-arrow { margin-left: auto; font-size: 18px; color: var(--muted); transition: transform 0.22s cubic-bezier(0.16,1,0.3,1); line-height: 1; }
+    .acc-body { overflow: hidden; max-height: 0; transition: max-height 0.35s cubic-bezier(0.16,1,0.3,1); }
+    .acc-body.open { max-height: 2000px; }
+    .acc-body.open + .acc-header .acc-arrow,
+    .acc-header.open .acc-arrow { transform: rotate(90deg); }
+
+    /* ── STUDIO TOOLTIP ── */
+    .stat-hoverable { position: relative; cursor: default; }
+    .stat-tooltip {
+      display: none;
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 50%; transform: translateX(-50%);
+      z-index: 300;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      min-width: 230px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+      pointer-events: none;
+    }
+    .stat-hoverable:hover .stat-tooltip { display: block; }
+    .stt-group { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); font-weight: 700; margin-bottom: 6px; margin-top: 10px; }
+    .stt-group:first-child { margin-top: 0; }
+    .stt-item { font-size: 12px; color: var(--text); padding: 3px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .stt-item:last-of-type { border-bottom: none; }
+    .stt-date { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); text-align: right; font-family: monospace; }
+
+    /* ── SCHEDULE BAR ── */
+    .schedule-bar { margin: 0 32px 32px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 20px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+    .schedule-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; white-space: nowrap; }
+    .schedule-items { display: flex; gap: 16px; flex-wrap: wrap; }
+    .schedule-item { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .schedule-time { background: rgba(92,122,0,0.12); color: var(--accent); padding: 2px 8px; border-radius: 4px; font-weight: 700; font-size: 11px; font-family: monospace; }
+    .schedule-label { color: var(--muted); }
+
+    /* ── FOOTER ── */
+    footer { border-top: 1px solid var(--border); padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: var(--muted); }
+    .tech-stack { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tech-tag { background: var(--surface2); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; font-size: 10px; font-family: monospace; }
+
+    /* ══════════════════════════════════════════
+       MODAL — 작품 상세
+    ══════════════════════════════════════════ */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0; z-index: 500;
+      background: rgba(26,26,24,0.55);
+      backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; animation: fadein 0.18s ease; }
+    @keyframes fadein { from{opacity:0} to{opacity:1} }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: min(760px, calc(100vw - 40px));
+      max-height: calc(100vh - 60px);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      animation: slidein 0.22s cubic-bezier(0.16,1,0.3,1);
+    }
+    @keyframes slidein { from{transform:translateY(24px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+    .modal-visual {
+      width: 100%; aspect-ratio: 16/7;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .modal-visual img {
+      width: 100%; height: 100%; object-fit: cover; display: block;
+    }
+
+    .modal-body { padding: 28px 32px 32px; overflow-y: auto; }
+
+    .modal-header-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px;
+    }
+    .modal-title { font-size: 22px; font-weight: 800; line-height: 1.25; }
+    .modal-close {
+      flex-shrink: 0; width: 32px; height: 32px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 50%; cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--muted); transition: background 0.15s, color 0.15s;
+    }
+    .modal-close:hover { background: var(--border); color: var(--text); }
+
+    .modal-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+    .modal-tag {
+      padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;
+      border: 1px solid;
+    }
+    .modal-tag.source { border-color: rgba(0,212,255,0.4); color: var(--accent2); background: rgba(0,212,255,0.08); }
+    .modal-tag.new { border-color: rgba(255,77,109,0.4); color: var(--new); background: rgba(255,77,109,0.08); }
+    .modal-tag.category { border-color: var(--border); color: var(--muted); background: var(--surface2); }
+
+    .modal-desc { font-size: 13px; color: #ccc; line-height: 1.7; margin-bottom: 24px; }
+
+    .modal-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .modal-meta-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+    .modal-meta-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 4px; }
+    .modal-meta-value { font-size: 13px; font-weight: 600; }
+
+    .modal-actions { display: flex; gap: 12px; }
+    .btn-primary {
+      background: var(--accent); color: #000; border: none;
+      padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s; letter-spacing: 0.03em;
+    }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-secondary {
+      background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+      padding: 10px 24px; border-radius: 8px; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: border-color 0.15s;
+    }
+    .btn-secondary:hover { border-color: var(--accent2); color: var(--accent2); }
+
+    /* ══════════════════════════════════════════
+       MODAL — 아카이브 스튜디오
+    ══════════════════════════════════════════ */
+    .archive-modal-header {
+      padding: 28px 32px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .archive-modal-studio { display: flex; align-items: center; gap: 14px; }
+    .archive-modal-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+    .archive-modal-name { font-size: 20px; font-weight: 800; }
+    .archive-modal-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .archive-works { padding: 20px 32px 32px; overflow-y: auto; max-height: 420px; }
+    .archive-work-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 0; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.1s;
+      border-radius: 6px; padding: 12px 8px;
+    }
+    .archive-work-item:hover { background: var(--surface2); }
+    .archive-work-item:last-child { border-bottom: none; }
+    .awi-left { display: flex; align-items: center; gap: 12px; }
+    .awi-num { font-size: 11px; color: var(--muted); width: 20px; text-align: right; font-family: monospace; }
+    .awi-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .awi-info {}
+    .awi-title { font-size: 13px; font-weight: 600; }
+    .awi-cat { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .awi-right { display: flex; align-items: center; gap: 10px; }
+    .awi-year { font-size: 11px; color: var(--muted); font-family: monospace; }
+    .awi-arrow { font-size: 12px; color: var(--muted); }
+    .archive-work-item:hover .awi-arrow { color: var(--accent2); }
+  </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="logo-dot"></div>
+    더캔버스 포트폴리오 아카이빙 시스템 <span style="font-size:10px;font-weight:400;color:var(--muted);letter-spacing:0.05em;">v.1.0</span>
+  </div>
+  <div class="header-meta">
+    <span>마지막 수집: 2026-06-05 11:54 KST</span>
+    <div class="status-badge"><div class="status-dot"></div>Live</div>
+  </div>
+</header>
+
+<!-- ══ STATS ══ -->
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-value accent">96</div><div class="stat-label">총 수집 작품</div></div>
+  <div class="stat-item"><div class="stat-value red">96</div><div class="stat-label">오늘 신규</div></div>
+  <div class="stat-item stat-hoverable">
+    <div class="stat-value accent2">31</div>
+    <div class="stat-label">모니터링 스튜디오</div>
+    <div class="stat-tooltip">
+      <div class="stt-group">🇰🇷 국내 (21)</div>
+      <div class="stt-item">자이언트스텝</div>
+      <div class="stt-item">아요바</div>
+      <div class="stt-item">SOLID VFX</div>
+      <div class="stt-item">디보프로덕션</div>
+      <div class="stt-item">이마고픽쳐스</div>
+      <div class="stt-item">제이더블유미디어</div>
+      <div class="stt-item">The Authentic</div>
+      <div class="stt-item">RGB POST</div>
+      <div class="stt-item">HELIX D Studio</div>
+      <div class="stt-item">미디어밸런스</div>
+      <div class="stt-item">라운드앤라운드</div>
+      <div class="stt-item">더무브랩</div>
+      <div class="stt-item">MOCA</div>
+      <div class="stt-item">auv</div>
+      <div class="stt-item">2GREY</div>
+      <div class="stt-item">토브웍스</div>
+      <div class="stt-item">슈퍼베리모어</div>
+      <div class="stt-item">도그빌 스튜디오</div>
+      <div class="stt-item">엔에이유</div>
+      <div class="stt-item">베이그</div>
+      <div class="stt-item">우트크리에이티브</div>
+      <div class="stt-group">🌐 해외 (10)</div>
+      <div class="stt-item">teamLab</div>
+      <div class="stt-item">Moment Factory</div>
+      <div class="stt-item">Random International</div>
+      <div class="stt-item">Universal Everything</div>
+      <div class="stt-item">UNIT9</div>
+      <div class="stt-item">Active Theory</div>
+      <div class="stt-item">B-Reel</div>
+      <div class="stt-item">Refik Anadol Studio</div>
+      <div class="stt-item">ManvsMachine</div>
+      <div class="stt-item">Hush</div>
+      <div class="stt-date">리스트 갱신 2026-06-02</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONTROLS ══ -->
+<div class="controls">
+  <button class="filter-btn active" onclick="filterCards('all',this)">전체</button>
+  <button class="filter-btn" onclick="filterCards('kr',this)">🇰🇷 국내</button>
+  <button class="filter-btn" onclick="filterCards('global',this)">🌐 해외</button>
+  <button class="filter-btn" onclick="filterCards('new',this)">🔴 신규만</button>
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="text" id="searchInput" placeholder="작품 검색..." oninput="searchCards(this.value)" />
+  </div>
+</div>
+
+<div class="color-filters" id="colorFilters">
+  <span class="color-filter-label">컬러</span>
+  <div class="color-swatch-all active" title="전체" onclick="filterByColor('all',this)"></div>
+  <div class="color-swatch" style="background:#e83030" data-hue="red"     title="빨강"   onclick="filterByColor('red',this)"></div>
+  <div class="color-swatch" style="background:#e87830" data-hue="orange"  title="주황"   onclick="filterByColor('orange',this)"></div>
+  <div class="color-swatch" style="background:#c9a800" data-hue="yellow"  title="노랑"   onclick="filterByColor('yellow',this)"></div>
+  <div class="color-swatch" style="background:#3ca050" data-hue="green"   title="초록"   onclick="filterByColor('green',this)"></div>
+  <div class="color-swatch" style="background:#20a0a0" data-hue="teal"    title="청록"   onclick="filterByColor('teal',this)"></div>
+  <div class="color-swatch" style="background:#2060d0" data-hue="blue"    title="파랑"   onclick="filterByColor('blue',this)"></div>
+  <div class="color-swatch" style="background:#8040c0" data-hue="purple"  title="보라"   onclick="filterByColor('purple',this)"></div>
+  <div class="color-swatch" style="background:#d040a0" data-hue="pink"    title="분홍"   onclick="filterByColor('pink',this)"></div>
+  <div class="color-swatch" style="background:linear-gradient(135deg,#333 50%,#ccc 50%)" data-hue="achromatic" title="무채색" onclick="filterByColor('achromatic',this)"></div>
+</div>
+
+<div class="tag-filters" id="tagFilters">
+  <button class="tag-filter-btn active" onclick="filterByTag('all',this)">전체</button>
+  <button class="tag-filter-btn" onclick="filterByTag('몰입형 설치',this)">몰입형 설치</button>
+  <button class="tag-filter-btn" onclick="filterByTag('브랜드 캠페인',this)">브랜드 캠페인</button>
+  <button class="tag-filter-btn" onclick="filterByTag('채널 아이덴티티',this)">채널 아이덴티티</button>
+  <button class="tag-filter-btn" onclick="filterByTag('모션 타이틀',this)">모션 타이틀</button>
+  <button class="tag-filter-btn" onclick="filterByTag('인터랙티브',this)">인터랙티브</button>
+  <button class="tag-filter-btn" onclick="filterByTag('AI·제너러티브',this)">AI·제너러티브</button>
+  <button class="tag-filter-btn" onclick="filterByTag('VFX·버추얼',this)">VFX·버추얼</button>
+  <button class="tag-filter-btn" onclick="filterByTag('게임·e스포츠',this)">게임·e스포츠</button>
+  <button class="tag-filter-btn" onclick="filterByTag('제품 영상',this)">제품 영상</button>
+  <button class="tag-filter-btn" onclick="filterByTag('캐릭터·IP',this)">캐릭터·IP</button>
+</div>
+
+<!-- ══ GALLERY ══ -->
+<div class="section-header">
+  <span class="section-title">스튜디오 모니터링 — 신규 수집 작품</span>
+  <div class="section-line"></div>
+</div>
+
+<div class="gallery" id="gallery">
+  <div class="card" data-id="new_825735343ceb" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Phish: The 2026 Sphere Residency" onclick="window.open('https://momentfactory.com/products/phish-the-2026-sphere-residency','_blank')">
+    <img class="card-thumb" src="http://momentfactory.com/cdn/shop/files/Moment_Factory_PHISH_SPHERE2026_0416_202222-7840_ALIVE-WS.jpg?v=1778078361" alt="Phish: The 2026 Sphere Residency" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Moment Factory</div>
+      <div class="card-title">Phish: The 2026 Sphere Residency</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#1e1538"></span><span class="card-color-dot" style="background:#cd9c7e"></span></div>
+    
+    
+    <div class="card-source">Moment Factory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_29ab99023cfc" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="pixelography" onclick="window.open('https://www.random-international.com/pixelography','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/29ab99023cfc/600/375" alt="pixelography" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Random International</div>
+      <div class="card-title">pixelography</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Random International</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_f63d7218e63a" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="BMW" onclick="window.open('https://www.universaleverything.com/projects?client=bmw','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/f63d7218e63a/600/375" alt="BMW" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Universal Everything</div>
+      <div class="card-title">BMW</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Universal Everything</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_8c4ad0724193" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="Destination BC: The Great Wilderness Car Wash" onclick="window.open('https://www.unit9.com/project/destinationbc-great-wilderness-car-wash','_blank')">
+    <img class="card-thumb" src="https://unit9.com/wp-content/uploads/DBC_WASHAWAY_4-1400x788.png" alt="Destination BC: The Great Wilderness Car Wash" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">UNIT9</div>
+      <div class="card-title">Destination BC: The Great Wilderness Car Wash</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#080b13"></span><span class="card-color-dot" style="background:#049075"></span></div>
+    
+    
+    <div class="card-source">UNIT9</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_780c7772f628" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="Harmonic State" onclick="window.open('https://activetheory.net/work/harmonic-state','_blank')">
+    <img class="card-thumb" src="https://storage.googleapis.com/activetheory-v6.appspot.com/media/the_harmonic_state%20(1080p)%202.jpg" alt="Harmonic State" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Active Theory</div>
+      <div class="card-title">Harmonic State</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#04101e"></span><span class="card-color-dot" style="background:#56ccdb"></span></div>
+    
+    
+    <div class="card-source">Active Theory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_185b1a29e1f0" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title=" Emulait - Born For Now" onclick="window.open('https://www.b-reel.com/work/emulait-born-for-now','_blank')">
+    <img class="card-thumb" src="https://www.datocms-assets.com/64716/1648646831-b-reel-share.png?auto=format&amp;fit=max&amp;w=1200" alt=" Emulait - Born For Now" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">B-Reel</div>
+      <div class="card-title"> Emulait - Born For Now</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#242424"></span></div>
+    
+    
+    <div class="card-source">B-Reel</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_bf850ead03b8" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="unsupervised" onclick="window.open('https://refikanadol.com/works/unsupervised/','_blank')">
+    <img class="card-thumb" src="https://refikanadol.com/wp-content/themes/refikanadol/img/ra-og.png" alt="unsupervised" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Refik Anadol Studio</div>
+      <div class="card-title">unsupervised</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e4e4e4"></span></div>
+    
+    
+    <div class="card-source">Refik Anadol Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d5b1a97fb03a" data-color-hue="red" data-color-hue="red" data-source="global" data-new="true" data-title="Gilga Farm" onclick="window.open('https://mvsm.com/project/gilga-farm','_blank')">
+    <img class="card-thumb" src="https://mvsm.com/assets/images/project/_extraLarge/cover.png" alt="Gilga Farm" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">ManvsMachine</div>
+      <div class="card-title">Gilga Farm</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#b08b84"></span><span class="card-color-dot" style="background:#226a7c"></span></div>
+    
+    
+    <div class="card-source">ManvsMachine</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_969c3ed608ab" data-color-hue="pink" data-color-hue="pink" data-source="global" data-new="true" data-title="Rippling 2025" onclick="window.open('https://www.heyhush.com/work/105-unlocking-the-psych-of-experience-for-rippling','_blank')">
+    <img class="card-thumb" src="https://d1daelpqwpl4uy.cloudfront.net/api/file/RkgCxam6S9q8dpBKbLUd/convert?format=jpg&amp;w=2000&amp;compress=true&amp;fit=max" alt="Rippling 2025" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Hush</div>
+      <div class="card-title">Rippling 2025</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#d2adbe"></span><span class="card-color-dot" style="background:#523441"></span></div>
+    
+    
+    <div class="card-source">Hush</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_5740a1d920f4" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="SM ENTERTAINMENT : 30th Anniversary Celebration Film SM ENTERTAINMENT" onclick="window.open('https://www.giantstep.co.kr/works_view.php?cseq=&seq=1463','_blank')">
+    <img class="card-thumb" src="https://www.giantstep.co.kr/attach_files/bbs/data_1_20220225184035.png" alt="SM ENTERTAINMENT : 30th Anniversary Celebration Film SM ENTERTAINMENT" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">자이언트스텝</div>
+      <div class="card-title">SM ENTERTAINMENT : 30th Anniversary Celebration Film SM ENTERTAINMENT</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">채널 아이덴티티</span><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#c2c2c2"></span></div>
+    
+    
+    <div class="card-source">자이언트스텝</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_4d70e6b98b3e" data-source="global" data-new="true" data-title="" onclick="window.open('http://solidvfx.com/portfolio-item/samsung-circle-to-search/','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/4d70e6b98b3e/600/375" alt="" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">SOLID VFX</div>
+      <div class="card-title"></div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-source">SOLID VFX</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_4178968dc94b" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="3064934" onclick="window.open('https://imagopictures.co.kr/CONTENTS/view/3064934','_blank')">
+    <img class="card-thumb" src="https://lh3.googleusercontent.com/wlXZMEWLgEeGfZm09lyJKiKv7pUVNwOObxCshTegf-9SKFTIvK7TrSNz1800EHRrscIt_x7zAFsoR7bqcSzMXRp7vho3G_AKD7c1c8nlWMgUlw8SwuZp7Q=w800" alt="3064934" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">이마고픽쳐스</div>
+      <div class="card-title">3064934</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#6a73b4"></span><span class="card-color-dot" style="background:#dcb5c6"></span></div>
+    
+    
+    <div class="card-source">이마고픽쳐스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_c98d9f993157" data-color-hue="red" data-color-hue="red" data-source="global" data-new="true" data-title="817567627" onclick="window.open('https://vimeo.com/817567627','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/1655243791-9707292badb7c01fadabe89b4f4e77a1abb5708ebcad1c73618e8831c8928b2f-d?f=webp&amp;region=us" alt="817567627" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">RGB POST</div>
+      <div class="card-title">817567627</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e84354"></span></div>
+    
+    
+    <div class="card-source">RGB POST</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d18130364ad5" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="ENA-SPORTS-NETWORK-DESIGN" onclick="window.open('https://www.behance.net/gallery/244615337/ENA-SPORTS-NETWORK-DESIGN','_blank')">
+    <img class="card-thumb" src="https://mir-s3-cdn-cf.behance.net/project_modules/1400/35024b244615337.699d6d0590449.jpg" alt="ENA-SPORTS-NETWORK-DESIGN" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">HELIX D Studio</div>
+      <div class="card-title">ENA-SPORTS-NETWORK-DESIGN</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#1f4638"></span><span class="card-color-dot" style="background:#2ad1a0"></span></div>
+    
+    
+    <div class="card-source">HELIX D Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_5bced4e4a72c" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="CASETiFY X BBNEXDO" onclick="window.open('https://roundnround.io/casetify-x-bbnexdo','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/212bccfd-5b4f-41ca-b17d-7c467961fcf8/b36c73a4-c2f6-4c48-b79b-f7fbad2d950f_rw_1920.jpg?h=1ab861534060d8e47eae5f76d2347474&url=aHR0cHM6Ly9taXItczMtY2RuLWNmLmJlaGFuY2UubmV0L3Byb2plY3RfbW9kdWxlcy9zb3VyY2UvMjFkMzNiMjQ2MTI0ODg1LjY5YmNhNmY3OTdkYjYuanBn" alt="CASETiFY X BBNEXDO" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">라운드앤라운드</div>
+      <div class="card-title">CASETiFY X BBNEXDO</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">캐릭터·IP</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#211e2d"></span><span class="card-color-dot" style="background:#cccbce"></span></div>
+    
+    
+    <div class="card-source">라운드앤라운드</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_06f01ed52eba" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Www.Tvcf.Co.Kr" onclick="window.open('https://www.tvcf.co.kr','_blank')">
+    <img class="card-thumb" src="https://www.tvcf.co.kr/public/svg/icons/tvcfLogo.svg" alt="Www.Tvcf.Co.Kr" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">더무브랩</div>
+      <div class="card-title">Www.Tvcf.Co.Kr</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"></div>
+    
+    
+    <div class="card-source">더무브랩</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_750727c05eea" data-color-hue="red" data-color-hue="red" data-source="global" data-new="true" data-title="1026044312" onclick="window.open('https://vimeo.com/1026044312','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/1945748566-8453a26e5977e5ccafa18db890da34122ffc73f2f761121969d28c1043a7de60-d?f=webp&amp;region=us" alt="1026044312" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">MOCA</div>
+      <div class="card-title">1026044312</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e44a3f"></span></div>
+    
+    
+    <div class="card-source">MOCA</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_bd8da2508c6f" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="The First Look 2026 1" onclick="window.open('https://auvcreative.com/the-first-look-2026-1','_blank')">
+    <img class="card-thumb" src="https://freight.cargo.site/w/1200/i/J2791136622040360384594345667856/TheFirstLook2026_KeyVisual_A_Jan4_7_1118.png" alt="The First Look 2026 1" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">auv</div>
+      <div class="card-title">The First Look 2026 1</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"></div>
+    
+    
+    <div class="card-source">auv</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_eb6ff14ef9a3" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="KART RIDER DRIFT : SEASON 6 NITRO STUDIO" onclick="window.open('https://www.2grey.com/video/kart-rider-drift-season-6','_blank')">
+    <img class="card-thumb" src="https://www.2grey.com/video/download/41803/w/1200/KD_S6_thumb.png" alt="KART RIDER DRIFT : SEASON 6 NITRO STUDIO" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">2GREY</div>
+      <div class="card-title">KART RIDER DRIFT : SEASON 6 NITRO STUDIO</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">게임·e스포츠</span><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#676ec4"></span><span class="card-color-dot" style="background:#8cdff9"></span></div>
+    
+    
+    <div class="card-source">2GREY</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_bf5417a0af48" data-color-hue="green" data-color-hue="green" data-source="kr" data-new="true" data-title="CHEONMASAN COMPLEX OBSERVATORY &amp; ECOLOGICAL EXPERIENCE CENTER IMMERSIVE EXHIBITI" onclick="window.open('https://www.tovworks.tv/work/cheonmasan-complex-observatory-ecological-experience-center','_blank')">
+    <img class="card-thumb" src="https://framerusercontent.com/images/pOnj2iGgAWSWfY0oK3B4DjIGhB8.png?scale-down-to=512&width=1801&height=1014" alt="CHEONMASAN COMPLEX OBSERVATORY &amp; ECOLOGICAL EXPERIENCE CENTER IMMERSIVE EXHIBITI" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">토브웍스</div>
+      <div class="card-title">CHEONMASAN COMPLEX OBSERVATORY &amp; ECOLOGICAL EXPERIENCE CENTER IMMERSIVE EXHIBITI</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#618361"></span><span class="card-color-dot" style="background:#1f212d"></span></div>
+    
+    
+    <div class="card-source">토브웍스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_361fd8e4fd6e" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="COS: NEO SEOUL 2026" onclick="window.open('https://superverymore.tv/cos-neo-seoul','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/4835c10532f8914866be88618fb54b34/366c3d3b-ef7d-4138-a84c-7ea3627b83ee_rw_1920.jpg?h=689bdad6dae3338393b241a5f0d760c1" alt="COS: NEO SEOUL 2026" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">슈퍼베리모어</div>
+      <div class="card-title">COS: NEO SEOUL 2026</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#0f274b"></span><span class="card-color-dot" style="background:#2048b7"></span></div>
+    
+    
+    <div class="card-source">슈퍼베리모어</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_1960f0843d6a" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="하기스 썸머" onclick="window.open('https://dogvillestudio.com/19/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=170953427&t=board','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/1960f0843d6a/600/375" alt="하기스 썸머" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">도그빌 스튜디오</div>
+      <div class="card-title">하기스 썸머</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">도그빌 스튜디오</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b9cd35dd423a" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="- 2026 Motion Graphics, Set Design, Art Direction" onclick="window.open('https://wootcreative.kr/lotte-department-store-nowon-vp-film','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/a92595ffb77364510f729ed9c538bfbc/0663d69f-2c1d-4e79-9e71-17dc7a9724a2_rwc_464x0x1501x2000x1501.png?h=bdb8834a65880c27d5ef5e7f318b3176" alt="- 2026 Motion Graphics, Set Design, Art Direction" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">우트크리에이티브</div>
+      <div class="card-title">- 2026 Motion Graphics, Set Design, Art Direction</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#e3e3e3"></span><span class="card-color-dot" style="background:#090914"></span></div>
+    
+    
+    <div class="card-source">우트크리에이티브</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_7a8e76b7955d" data-color-hue="red" data-color-hue="red" data-source="global" data-new="true" data-title="Orderchaos Monitor" onclick="window.open('https://www.teamlab.art/w/orderchaos-monitor/','_blank')">
+    <img class="card-thumb" src="https://assets.team-lab.com/b5EBo9Uo-OK6SM09ZTkEZQ/ed3d9b1f-2732-4f7d-ee44-3435f5385b00/width=1200,format=jpeg" alt="Orderchaos Monitor" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">teamLab</div>
+      <div class="card-title">Orderchaos Monitor</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#664c4c"></span><span class="card-color-dot" style="background:#c87053"></span></div>
+    
+    
+    <div class="card-source">teamLab</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_20b5765c0c2d" data-color-hue="green" data-color-hue="green" data-source="global" data-new="true" data-title="Curiosity Cove" onclick="window.open('https://momentfactory.com/products/curiosity-cove','_blank')">
+    <img class="card-thumb" src="http://momentfactory.com/cdn/shop/files/Moment_Factory_Custom_Experiences_Cultural_Eductional_Mandai_Curiosity_Cove__ISH8017-WS.jpg?v=1764697289" alt="Curiosity Cove" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Moment Factory</div>
+      <div class="card-title">Curiosity Cove</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#2d502d"></span><span class="card-color-dot" style="background:#c9bf91"></span></div>
+    
+    
+    <div class="card-source">Moment Factory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_660e63f27674" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="alone-together" onclick="window.open('https://www.random-international.com/alone-together','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/660e63f27674/600/375" alt="alone-together" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Random International</div>
+      <div class="card-title">alone-together</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Random International</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_0ca013bab0e2" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Chanel" onclick="window.open('https://www.universaleverything.com/projects?client=chanel','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/0ca013bab0e2/600/375" alt="Chanel" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Universal Everything</div>
+      <div class="card-title">Chanel</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Universal Everything</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b85e428a7e92" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="LUKE &amp; JOSEPH The Royal Mint: Forever Metal" onclick="window.open('https://www.unit9.com/project/royal-mint-forever-metal','_blank')">
+    <img class="card-thumb" src="https://unit9.com/wp-content/uploads/unit9_royal_mint_013-1400x788.png" alt="LUKE &amp; JOSEPH The Royal Mint: Forever Metal" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">UNIT9</div>
+      <div class="card-title">LUKE &amp; JOSEPH The Royal Mint: Forever Metal</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#4d4538"></span><span class="card-color-dot" style="background:#c8d2c9"></span></div>
+    
+    
+    <div class="card-source">UNIT9</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_cc250857365b" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Discover your Patronus" onclick="window.open('https://activetheory.net/work/discover-your-patronus','_blank')">
+    <img class="card-thumb" src="https://storage.googleapis.com/activetheory-v6.appspot.com/media/Discover_Your_Patronus_Case_Study%20(1).jpg" alt="Discover your Patronus" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Active Theory</div>
+      <div class="card-title">Discover your Patronus</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#050506"></span><span class="card-color-dot" style="background:#1d323f"></span></div>
+    
+    
+    <div class="card-source">Active Theory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_fe4f51b0f3ad" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="11.10.23 Introducing Feels Like: Our new sister studio!" onclick="window.open('https://www.b-reel.com/work/feels-like','_blank')">
+    <img class="card-thumb" src="https://www.datocms-assets.com/64716/1648646831-b-reel-share.png?auto=format&amp;fit=max&amp;w=1200" alt="11.10.23 Introducing Feels Like: Our new sister studio!" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">B-Reel</div>
+      <div class="card-title">11.10.23 Introducing Feels Like: Our new sister studio!</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#242424"></span></div>
+    
+    
+    <div class="card-source">B-Reel</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_2e836b56d0d0" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="living-architecture-casa-batllo" onclick="window.open('https://refikanadol.com/works/living-architecture-casa-batllo/','_blank')">
+    <img class="card-thumb" src="https://refikanadol.com/wp-content/themes/refikanadol/img/ra-og.png" alt="living-architecture-casa-batllo" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Refik Anadol Studio</div>
+      <div class="card-title">living-architecture-casa-batllo</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e4e4e4"></span></div>
+    
+    
+    <div class="card-source">Refik Anadol Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_98224356c55b" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="Trade Every Play" onclick="window.open('https://mvsm.com/project/trade-every-play','_blank')">
+    <img class="card-thumb" src="https://mvsm.com/assets/images/project/_extraLarge/RH_Sports_169.jpg" alt="Trade Every Play" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">ManvsMachine</div>
+      <div class="card-title">Trade Every Play</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#171616"></span><span class="card-color-dot" style="background:#aa8f86"></span></div>
+    
+    
+    <div class="card-source">ManvsMachine</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_9c61ddb5125e" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Stellix 2025" onclick="window.open('https://www.heyhush.com/work/39-spatializing-a-platform-for-stellix','_blank')">
+    <img class="card-thumb" src="https://d1daelpqwpl4uy.cloudfront.net/api/file/x6VkZhwvQbi9saRfhb4K/convert?format=jpg&amp;w=2000&amp;compress=true&amp;fit=max" alt="Stellix 2025" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Hush</div>
+      <div class="card-title">Stellix 2025</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#243139"></span><span class="card-color-dot" style="background:#e9eef0"></span></div>
+    
+    
+    <div class="card-source">Hush</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_7034e73a6d8e" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Norangtongdak : Garlic in the deep NORANGTONGDAK" onclick="window.open('https://www.giantstep.co.kr/works_view.php?cseq=&seq=1461','_blank')">
+    <img class="card-thumb" src="https://www.giantstep.co.kr/attach_files/bbs/data_1_20220225184035.png" alt="Norangtongdak : Garlic in the deep NORANGTONGDAK" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">자이언트스텝</div>
+      <div class="card-title">Norangtongdak : Garlic in the deep NORANGTONGDAK</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#c2c2c2"></span></div>
+    
+    
+    <div class="card-source">자이언트스텝</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b2ba9a4c90f3" data-source="global" data-new="true" data-title="" onclick="window.open('http://solidvfx.com/portfolio-item/samsung-bespoke-ai-2/','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/b2ba9a4c90f3/600/375" alt="" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">SOLID VFX</div>
+      <div class="card-title"></div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-source">SOLID VFX</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_75ac6e29088e" data-color-hue="orange" data-color-hue="orange" data-source="kr" data-new="true" data-title="2796399" onclick="window.open('https://imagopictures.co.kr/CONTENTS/view/2796399','_blank')">
+    <img class="card-thumb" src="https://lh3.googleusercontent.com/YZrPu99JfpSHIQDit-wu6iYFlnlAgN4qqhJtv27hxL21Qe7b4yT2ofEdenNn9-G01tDynEMkMsUcL2V2-lvfQH4dpf5sUL07kbAltI_7c1hB8XTeg75K1jU=w800" alt="2796399" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">이마고픽쳐스</div>
+      <div class="card-title">2796399</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#45403d"></span><span class="card-color-dot" style="background:#d4ab8e"></span></div>
+    
+    
+    <div class="card-source">이마고픽쳐스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d28796846387" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="643434005" onclick="window.open('https://vimeo.com/643434005','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/1294443936-354f82da4972b4ea53aa1c654b7236b79829ec69df1ef6f94?f=webp&amp;region=us" alt="643434005" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">RGB POST</div>
+      <div class="card-title">643434005</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#d0b8ae"></span><span class="card-color-dot" style="background:#151612"></span></div>
+    
+    
+    <div class="card-source">RGB POST</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d18130364ad5" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="ENA SPORTS NETWORK DESIGN" onclick="window.open('https://www.behance.net/gallery/244615337/ENA-SPORTS-NETWORK-DESIGN','_blank')">
+    <img class="card-thumb" src="https://mir-s3-cdn-cf.behance.net/project_modules/1400/35024b244615337.699d6d0590449.jpg" alt="ENA SPORTS NETWORK DESIGN" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">HELIX D Studio</div>
+      <div class="card-title">ENA SPORTS NETWORK DESIGN</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#1f4638"></span><span class="card-color-dot" style="background:#2ad1a0"></span></div>
+    
+    
+    <div class="card-source">HELIX D Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d36017eae26e" data-color-hue="orange" data-color-hue="orange" data-source="kr" data-new="true" data-title="We are Kakao Friends!" onclick="window.open('https://roundnround.io/we-are-kakao-friends','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/212bccfd-5b4f-41ca-b17d-7c467961fcf8/46a74e19-2286-4098-8f27-38d6215a6689_rw_1920.jpg?h=83098a309629b47b8976e37ef227de94" alt="We are Kakao Friends!" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">라운드앤라운드</div>
+      <div class="card-title">We are Kakao Friends!</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">캐릭터·IP</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#fb9b04"></span><span class="card-color-dot" style="background:#0f0a06"></span></div>
+    
+    
+    <div class="card-source">라운드앤라운드</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_380759f0003f" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Ai1824 1013382" onclick="window.open('https://www.tvcf.co.kr/play/ai1824-1013382','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/380759f0003f/600/375" alt="Ai1824 1013382" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">더무브랩</div>
+      <div class="card-title">Ai1824 1013382</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">더무브랩</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_46835b930711" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="1183282278" onclick="window.open('https://vimeo.com/1183282278','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/2146093781-fe55691698c549981e230dd8776c145ca4aee8ecc4ba7ec1460c708d1f5b5cf8-d?f=webp&amp;region=us" alt="1183282278" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">MOCA</div>
+      <div class="card-title">1183282278</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#3b383c"></span><span class="card-color-dot" style="background:#c6c7d0"></span></div>
+    
+    
+    <div class="card-source">MOCA</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b504d75cafe1" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Oneplus Nord Buds 3R" onclick="window.open('https://auvcreative.com/oneplus-nord-buds-3r','_blank')">
+    <img class="card-thumb" src="https://freight.cargo.site/w/1200/i/W2553834994051379555090747567376/Main_Horizontal_2.jpg" alt="Oneplus Nord Buds 3R" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">auv</div>
+      <div class="card-title">Oneplus Nord Buds 3R</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"></div>
+    
+    
+    <div class="card-source">auv</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b1987d959713" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="KART RIDER DRIFT : SEASON 5 NITRO STUDIO" onclick="window.open('https://www.2grey.com/video/kart-rider-drift-season-5','_blank')">
+    <img class="card-thumb" src="https://www.2grey.com/video/download/29526/w/1200/2k_KD_S5_+%2812%29.jpg" alt="KART RIDER DRIFT : SEASON 5 NITRO STUDIO" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">2GREY</div>
+      <div class="card-title">KART RIDER DRIFT : SEASON 5 NITRO STUDIO</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">게임·e스포츠</span><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#1b2d41"></span><span class="card-color-dot" style="background:#b3b5b1"></span></div>
+    
+    
+    <div class="card-source">2GREY</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_8336b3504d26" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="HYUNDAI ROTEM DEFENSE SYSTEM IMMERSIVE EXHIBITION HYUNDAI" onclick="window.open('https://www.tovworks.tv/work/hyundai-rotem-defense-system-s1','_blank')">
+    <img class="card-thumb" src="https://framerusercontent.com/images/7P1ZSlpxtLsL9mAiwZxhGwXHs.jpg?scale-down-to=512&width=1920&height=1080" alt="HYUNDAI ROTEM DEFENSE SYSTEM IMMERSIVE EXHIBITION HYUNDAI" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">토브웍스</div>
+      <div class="card-title">HYUNDAI ROTEM DEFENSE SYSTEM IMMERSIVE EXHIBITION HYUNDAI</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#bbbabb"></span><span class="card-color-dot" style="background:#262621"></span></div>
+    
+    
+    <div class="card-source">토브웍스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_6fd55a951949" data-color-hue="green" data-color-hue="green" data-source="kr" data-new="true" data-title="COS: SUMMER TIME BREEZE 2026" onclick="window.open('https://superverymore.tv/cos-summer-time-breeze','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/4835c10532f8914866be88618fb54b34/41f89a91-7ac3-4696-8368-86e342ffe5a9_rw_1920.jpg?h=f0e2ff4f0d415e731be28af9fdf35175" alt="COS: SUMMER TIME BREEZE 2026" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">슈퍼베리모어</div>
+      <div class="card-title">COS: SUMMER TIME BREEZE 2026</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#b9beac"></span><span class="card-color-dot" style="background:#2f6879"></span></div>
+    
+    
+    <div class="card-source">슈퍼베리모어</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_310e116ef9ea" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="매머드커피" onclick="window.open('https://dogvillestudio.com/19/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=170953421&t=board','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/310e116ef9ea/600/375" alt="매머드커피" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">도그빌 스튜디오</div>
+      <div class="card-title">매머드커피</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">도그빌 스튜디오</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_e5e3bc0058ea" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="ALIENWARE AREA-51 LAPTOP PACKAGING PROMOTION FILM 2026 Motion Graphics, Branding" onclick="window.open('https://wootcreative.kr/alienware-area-51-laptop-packaging-promotion-film','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/a92595ffb77364510f729ed9c538bfbc/b1925816-4d13-4846-9708-42d3e704f473_rwc_552x0x810x1080x810.jpg?h=c380573f077304aefcc4f5388dcc040a" alt="ALIENWARE AREA-51 LAPTOP PACKAGING PROMOTION FILM 2026 Motion Graphics, Branding" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">우트크리에이티브</div>
+      <div class="card-title">ALIENWARE AREA-51 LAPTOP PACKAGING PROMOTION FILM 2026 Motion Graphics, Branding</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#cbd0de"></span><span class="card-color-dot" style="background:#4c659b"></span></div>
+    
+    
+    <div class="card-source">우트크리에이티브</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_cc59e952f554" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Dissipativefigures Murmuration" onclick="window.open('https://www.teamlab.art/w/dissipativefigures-murmuration/','_blank')">
+    <img class="card-thumb" src="https://assets.team-lab.com/b5EBo9Uo-OK6SM09ZTkEZQ/f74f0dfa-8d60-4d77-7247-74b730734400/width=1200,format=jpeg" alt="Dissipativefigures Murmuration" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">teamLab</div>
+      <div class="card-title">Dissipativefigures Murmuration</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#212125"></span><span class="card-color-dot" style="background:#b4b3b9"></span></div>
+    
+    
+    <div class="card-source">teamLab</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b58a14da2c18" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="La Serre des Mondes at Futuroscope" onclick="window.open('https://momentfactory.com/products/la-serre-des-mondes-at-futuroscope','_blank')">
+    <img class="card-thumb" src="http://momentfactory.com/cdn/shop/files/Moment_Factory_Custom_Serre_des_mondes_Futuroscope_WEB_0012.png?v=1770661736" alt="La Serre des Mondes at Futuroscope" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Moment Factory</div>
+      <div class="card-title">La Serre des Mondes at Futuroscope</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#18143a"></span><span class="card-color-dot" style="background:#c85fb6"></span></div>
+    
+    
+    <div class="card-source">Moment Factory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_c8280e9068f3" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="imagine" onclick="window.open('https://www.random-international.com/imagine','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/c8280e9068f3/600/375" alt="imagine" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Random International</div>
+      <div class="card-title">imagine</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Random International</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_bc205c9314ef" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Google" onclick="window.open('https://www.universaleverything.com/projects?client=google','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/bc205c9314ef/600/375" alt="Google" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Universal Everything</div>
+      <div class="card-title">Google</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Universal Everything</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_43493712af98" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="LEGO x Pharrell Williams: Pinball Experience" onclick="window.open('https://www.unit9.com/project/lego-pharrell-williams-pinball-experience','_blank')">
+    <img class="card-thumb" src="https://unit9.com/wp-content/uploads/lego-x-pharrell-williams-pinball-experience-1400x788.png" alt="LEGO x Pharrell Williams: Pinball Experience" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">UNIT9</div>
+      <div class="card-title">LEGO x Pharrell Williams: Pinball Experience</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span><span class="card-tag">캐릭터·IP</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#59605e"></span><span class="card-color-dot" style="background:#e3ded6"></span></div>
+    
+    
+    <div class="card-source">UNIT9</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_4395d63223ba" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Paper Planes" onclick="window.open('https://activetheory.net/work/paper-planes','_blank')">
+    <img class="card-thumb" src="https://storage.googleapis.com/activetheory-v6.appspot.com/media/Paperplanes1-1024x576.jpg" alt="Paper Planes" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Active Theory</div>
+      <div class="card-title">Paper Planes</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#c9bfec"></span><span class="card-color-dot" style="background:#8da3d7"></span></div>
+    
+    
+    <div class="card-source">Active Theory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_18c6d9149ea3" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title=" The Demon Meat Shake - Diablo IV" onclick="window.open('https://www.b-reel.com/work/diablo-iv','_blank')">
+    <img class="card-thumb" src="https://www.datocms-assets.com/64716/1648646831-b-reel-share.png?auto=format&amp;fit=max&amp;w=1200" alt=" The Demon Meat Shake - Diablo IV" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">B-Reel</div>
+      <div class="card-title"> The Demon Meat Shake - Diablo IV</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#242424"></span></div>
+    
+    
+    <div class="card-source">B-Reel</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_21fa86546e8f" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="machine-hallucinations-sphere" onclick="window.open('https://refikanadol.com/works/machine-hallucinations-sphere/','_blank')">
+    <img class="card-thumb" src="https://refikanadol.com/wp-content/themes/refikanadol/img/ra-og.png" alt="machine-hallucinations-sphere" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Refik Anadol Studio</div>
+      <div class="card-title">machine-hallucinations-sphere</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">AI·제너러티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e4e4e4"></span></div>
+    
+    
+    <div class="card-source">Refik Anadol Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_ed35a9badbaf" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Canva Affinity" onclick="window.open('https://mvsm.com/project/canva-affinity','_blank')">
+    <img class="card-thumb" src="https://mvsm.com/assets/images/project/_extraLarge/Large_Rock_thumb_16x9.jpg" alt="Canva Affinity" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">ManvsMachine</div>
+      <div class="card-title">Canva Affinity</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#252121"></span><span class="card-color-dot" style="background:#8b827f"></span></div>
+    
+    
+    <div class="card-source">ManvsMachine</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_6bb8183df080" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Barclays 2025" onclick="window.open('https://www.heyhush.com/work/40-illuminating-times-square-for-barclays','_blank')">
+    <img class="card-thumb" src="https://d1daelpqwpl4uy.cloudfront.net/api/file/YFWneamRqWDKNY6lN5IM/convert?format=jpg&amp;w=2000&amp;compress=true&amp;fit=max" alt="Barclays 2025" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Hush</div>
+      <div class="card-title">Barclays 2025</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#dce2ee"></span><span class="card-color-dot" style="background:#145483"></span></div>
+    
+    
+    <div class="card-source">Hush</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_8fcb2f51e9b5" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Netflix : The Trauma Code Showreel NETFLIX" onclick="window.open('https://www.giantstep.co.kr/works_view.php?cseq=&seq=1460','_blank')">
+    <img class="card-thumb" src="https://www.giantstep.co.kr/attach_files/bbs/data_1_20220225184035.png" alt="Netflix : The Trauma Code Showreel NETFLIX" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">자이언트스텝</div>
+      <div class="card-title">Netflix : The Trauma Code Showreel NETFLIX</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#c2c2c2"></span></div>
+    
+    
+    <div class="card-source">자이언트스텝</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_32a0403e290d" data-source="global" data-new="true" data-title="" onclick="window.open('http://solidvfx.com/portfolio-item/happiz-felix/','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/32a0403e290d/600/375" alt="" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">SOLID VFX</div>
+      <div class="card-title"></div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-source">SOLID VFX</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_afb8ce652a61" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="2376758" onclick="window.open('https://imagopictures.co.kr/CONTENTS/view/2376758','_blank')">
+    <img class="card-thumb" src="https://lh3.googleusercontent.com/bpL2LjoUGrIm-9HHwBPqT96NEmRSuHeC-ROdKD5GUv55BpkWA1m26v1CXqXFHLESH7SY-UcfGjE1AGBwnDzp-IUV6fDczckP5Hul8Iekhe8frEBDrtCs=w800" alt="2376758" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">이마고픽쳐스</div>
+      <div class="card-title">2376758</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#347ef1"></span><span class="card-color-dot" style="background:#ce677f"></span></div>
+    
+    
+    <div class="card-source">이마고픽쳐스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_69262febabca" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="616825681" onclick="window.open('https://vimeo.com/616825681','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/1258850830-38846a47dd13142ad9928618998e5fb88cc978526af101a3b?f=webp&amp;region=us" alt="616825681" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">RGB POST</div>
+      <div class="card-title">616825681</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#a8c8d7"></span><span class="card-color-dot" style="background:#5b5e7c"></span></div>
+    
+    
+    <div class="card-source">RGB POST</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_fc12365f7a25" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="SBS-35th-Anniversary-Ident" onclick="window.open('https://www.behance.net/gallery/239740351/SBS-35th-Anniversary-Ident','_blank')">
+    <img class="card-thumb" src="https://mir-s3-cdn-cf.behance.net/project_modules/1400/ccee18239740351.692fdbaa35a07.jpg" alt="SBS-35th-Anniversary-Ident" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">HELIX D Studio</div>
+      <div class="card-title">SBS-35th-Anniversary-Ident</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#0c5de8"></span><span class="card-color-dot" style="background:#ac9c96"></span></div>
+    
+    
+    <div class="card-source">HELIX D Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_615b2455fb9a" data-color-hue="red" data-color-hue="red" data-source="kr" data-new="true" data-title="SWEET HOLIDAYS : Christmas in LOTTE TOWN" onclick="window.open('https://roundnround.io/sweet-holidays-christmas-in-lotte-town','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/212bccfd-5b4f-41ca-b17d-7c467961fcf8/5aa3e603-5fec-4799-8f0b-60eddfde4c79_rw_1920.jpg?h=7e7cf53df6c824e5e3fe5ad8cf296bf8" alt="SWEET HOLIDAYS : Christmas in LOTTE TOWN" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">라운드앤라운드</div>
+      <div class="card-title">SWEET HOLIDAYS : Christmas in LOTTE TOWN</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">캐릭터·IP</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#9c1404"></span><span class="card-color-dot" style="background:#e9cfc9"></span></div>
+    
+    
+    <div class="card-source">라운드앤라운드</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_383f237d05a5" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Ai2729 1019072" onclick="window.open('https://www.tvcf.co.kr/play/ai2729-1019072','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/383f237d05a5/600/375" alt="Ai2729 1019072" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">더무브랩</div>
+      <div class="card-title">Ai2729 1019072</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">더무브랩</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_9ef0da2ecbbf" data-color-hue="pink" data-color-hue="pink" data-source="global" data-new="true" data-title="1184039150" onclick="window.open('https://vimeo.com/1184039150','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/2147093917-a7e9d44e003dc754827e651dcdcb700fb218e881b4c6138878199dfc9f27ae49-d?f=webp&amp;region=us" alt="1184039150" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">MOCA</div>
+      <div class="card-title">1184039150</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#e5aec0"></span><span class="card-color-dot" style="background:#9f2332"></span></div>
+    
+    
+    <div class="card-source">MOCA</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b90d10dbc21e" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Disenchanted" onclick="window.open('https://auvcreative.com/disenchanted','_blank')">
+    <img class="card-thumb" src="https://freight.cargo.site/w/1200/i/A2566571584984732092801507863824/Disenchanted-00438.png" alt="Disenchanted" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">auv</div>
+      <div class="card-title">Disenchanted</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"></div>
+    
+    
+    <div class="card-source">auv</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_e286f4c1fdf9" data-color-hue="pink" data-color-hue="pink" data-source="global" data-new="true" data-title="KART RIDER DRIFT : SEASON 4 NITRO STUDIO" onclick="window.open('https://www.2grey.com/video/kart-rider-drift-season-4','_blank')">
+    <img class="card-thumb" src="https://www.2grey.com/video/download/30147/w/1200/kd_s4_0018.jpg" alt="KART RIDER DRIFT : SEASON 4 NITRO STUDIO" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">2GREY</div>
+      <div class="card-title">KART RIDER DRIFT : SEASON 4 NITRO STUDIO</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">게임·e스포츠</span><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#4a283a"></span><span class="card-color-dot" style="background:#cd9c9d"></span></div>
+    
+    
+    <div class="card-source">2GREY</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_f5fd396f1cf5" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="PENGUIN'S GREAT ADVENTURE IN GIJANG INTERACTION CONTENT GIJANG CHILDREN'S LIBRAR" onclick="window.open('https://www.tovworks.tv/work/penguins-great-adventure-in-gijang','_blank')">
+    <img class="card-thumb" src="https://framerusercontent.com/images/TK9EMfLEHLrGxgK7CmQabII4C1k.jpg?scale-down-to=512&width=1920&height=1080" alt="PENGUIN'S GREAT ADVENTURE IN GIJANG INTERACTION CONTENT GIJANG CHILDREN'S LIBRAR" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">토브웍스</div>
+      <div class="card-title">PENGUIN'S GREAT ADVENTURE IN GIJANG INTERACTION CONTENT GIJANG CHILDREN'S LIBRAR</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span><span class="card-tag">캐릭터·IP</span><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#9db0c9"></span><span class="card-color-dot" style="background:#726154"></span></div>
+    
+    
+    <div class="card-source">토브웍스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_4bd07bec405c" data-color-hue="red" data-color-hue="red" data-source="kr" data-new="true" data-title="AGENTS OF MYSTERY 2: OP 2026" onclick="window.open('https://superverymore.tv/agent-of-mystery-2-op','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/4835c10532f8914866be88618fb54b34/6d22ca4f-ef0e-46d4-866c-30f4f55e148c_rw_1920.png?h=6492d8c14211ee17458554c68abd0f03" alt="AGENTS OF MYSTERY 2: OP 2026" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">슈퍼베리모어</div>
+      <div class="card-title">AGENTS OF MYSTERY 2: OP 2026</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#0c0405"></span><span class="card-color-dot" style="background:#b07676"></span></div>
+    
+    
+    <div class="card-source">슈퍼베리모어</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_f9d2d1f441db" data-color-hue="yellow" data-color-hue="yellow" data-source="kr" data-new="true" data-title="LG유플러스" onclick="window.open('https://dogvillestudio.com/19/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=170281522&t=board','_blank')">
+    <img class="card-thumb" src="https://cdn.imweb.me/thumbnail/20260306/30a31f1ad46b8.jpg" alt="LG유플러스" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">도그빌 스튜디오</div>
+      <div class="card-title">LG유플러스</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#4a4735"></span><span class="card-color-dot" style="background:#dbd5bf"></span></div>
+    
+    
+    <div class="card-source">도그빌 스튜디오</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_974352c19cc9" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="BTS LIGHTSTICK PROMOTION FILM 2026 Motion Graphics, Branding, Art Direction" onclick="window.open('https://wootcreative.kr/bts-lightstick-promotion-film','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/a92595ffb77364510f729ed9c538bfbc/7f1725e5-f8d5-4caf-ad17-d35b5ead35d9_car_3x4.jpg?h=719860ba070e726c7078854afc6f3e4f" alt="BTS LIGHTSTICK PROMOTION FILM 2026 Motion Graphics, Branding, Art Direction" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">우트크리에이티브</div>
+      <div class="card-title">BTS LIGHTSTICK PROMOTION FILM 2026 Motion Graphics, Branding, Art Direction</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#161a22"></span><span class="card-color-dot" style="background:#c0c7d2"></span></div>
+    
+    
+    <div class="card-source">우트크리에이티브</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_c729f6d9d701" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Dissipativefigures Human" onclick="window.open('https://www.teamlab.art/w/dissipativefigures-human/','_blank')">
+    <img class="card-thumb" src="https://assets.team-lab.com/b5EBo9Uo-OK6SM09ZTkEZQ/c5482cf2-8d22-4756-62ed-45bc7d9f5200/width=1200,format=jpeg" alt="Dissipativefigures Human" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">teamLab</div>
+      <div class="card-title">Dissipativefigures Human</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#424246"></span><span class="card-color-dot" style="background:#cccbcf"></span></div>
+    
+    
+    <div class="card-source">teamLab</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_09298d5348a4" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="Realmadrid Games" onclick="window.open('https://momentfactory.com/products/realmadrid-games','_blank')">
+    <img class="card-thumb" src="http://momentfactory.com/cdn/shop/files/Moment_Factory_Custom_Experiences_Sports_Entertainment_Real_Madrid_Games_087-WS_46fdefce-745c-4f6c-91a6-97cbf378a1d3.jpg?v=1760992775" alt="Realmadrid Games" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Moment Factory</div>
+      <div class="card-title">Realmadrid Games</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">게임·e스포츠</span><span class="card-tag">제품 영상</span><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#353f53"></span><span class="card-color-dot" style="background:#d8c89e"></span></div>
+    
+    
+    <div class="card-source">Moment Factory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_28f221f9cec4" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="human-algorithm-i" onclick="window.open('https://www.random-international.com/human-algorithm-i','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/28f221f9cec4/600/375" alt="human-algorithm-i" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Random International</div>
+      <div class="card-title">human-algorithm-i</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Random International</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_0c04c5ce1a5f" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Hyundai" onclick="window.open('https://www.universaleverything.com/projects?client=hyundai','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/0c04c5ce1a5f/600/375" alt="Hyundai" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Universal Everything</div>
+      <div class="card-title">Hyundai</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">Universal Everything</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_a5bd9214a209" data-color-hue="red" data-color-hue="red" data-source="global" data-new="true" data-title="ALEXANDER BROWN Harbin Beer: NBA FOOH Drone Show" onclick="window.open('https://www.unit9.com/project/harbin-beer-nba-fooh-drone-show','_blank')">
+    <img class="card-thumb" src="https://unit9.com/wp-content/uploads/CASE-Study-1400x788.png" alt="ALEXANDER BROWN Harbin Beer: NBA FOOH Drone Show" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">UNIT9</div>
+      <div class="card-title">ALEXANDER BROWN Harbin Beer: NBA FOOH Drone Show</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#070c14"></span><span class="card-color-dot" style="background:#976a66"></span></div>
+    
+    
+    <div class="card-source">UNIT9</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_edebd448b319" data-color-hue="green" data-color-hue="green" data-source="global" data-new="true" data-title="Secret Sky" onclick="window.open('https://activetheory.net/work/secret-sky','_blank')">
+    <img class="card-thumb" src="https://storage.googleapis.com/activetheory-v6.appspot.com/media/secret_sky_2021_recap%20(1080p)_1.jpg" alt="Secret Sky" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Active Theory</div>
+      <div class="card-title">Secret Sky</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#33453b"></span><span class="card-color-dot" style="background:#99d5a3"></span></div>
+    
+    
+    <div class="card-source">Active Theory</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_2cb9d3c9caa4" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="2022 sounds like 1984" onclick="window.open('https://www.b-reel.com/work/storytel-1984','_blank')">
+    <img class="card-thumb" src="https://www.datocms-assets.com/64716/1648646831-b-reel-share.png?auto=format&amp;fit=max&amp;w=1200" alt="2022 sounds like 1984" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">B-Reel</div>
+      <div class="card-title">2022 sounds like 1984</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#242424"></span></div>
+    
+    
+    <div class="card-source">B-Reel</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_eb8b7b919d6f" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="large-nature-model-living-art" onclick="window.open('https://refikanadol.com/works/large-nature-model-living-art/','_blank')">
+    <img class="card-thumb" src="https://refikanadol.com/wp-content/themes/refikanadol/img/ra-og.png" alt="large-nature-model-living-art" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Refik Anadol Studio</div>
+      <div class="card-title">large-nature-model-living-art</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">AI·제너러티브</span><span class="card-tag">몰입형 설치</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#e4e4e4"></span></div>
+    
+    
+    <div class="card-source">Refik Anadol Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_cc5a3d0820a7" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="Take Your Seat" onclick="window.open('https://mvsm.com/project/take-your-seat','_blank')">
+    <img class="card-thumb" src="https://mvsm.com/assets/images/project/_extraLarge/NT_Website_Hero.jpg" alt="Take Your Seat" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">ManvsMachine</div>
+      <div class="card-title">Take Your Seat</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#211f19"></span><span class="card-color-dot" style="background:#b7b49c"></span></div>
+    
+    
+    <div class="card-source">ManvsMachine</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_1d22340c9ccc" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="Commonwealth Fusion Systems 2023" onclick="window.open('https://www.heyhush.com/work/36-visualizing-limitless-energy-with-cfs','_blank')">
+    <img class="card-thumb" src="https://d1daelpqwpl4uy.cloudfront.net/api/file/4aLpEPYCREm37vrI1DIT/convert?format=jpg&amp;w=2000&amp;compress=true&amp;fit=max" alt="Commonwealth Fusion Systems 2023" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">Hush</div>
+      <div class="card-title">Commonwealth Fusion Systems 2023</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#a06e4d"></span><span class="card-color-dot" style="background:#f7d3a8"></span></div>
+    
+    
+    <div class="card-source">Hush</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_cb5d2d2e75a3" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Olive Young : BIG SALE, BIG FAN, BIG LOVE! OLIVE YOUNG" onclick="window.open('https://www.giantstep.co.kr/works_view.php?cseq=&seq=1462','_blank')">
+    <img class="card-thumb" src="https://www.giantstep.co.kr/attach_files/bbs/data_1_20220225184035.png" alt="Olive Young : BIG SALE, BIG FAN, BIG LOVE! OLIVE YOUNG" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">자이언트스텝</div>
+      <div class="card-title">Olive Young : BIG SALE, BIG FAN, BIG LOVE! OLIVE YOUNG</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#c2c2c2"></span></div>
+    
+    
+    <div class="card-source">자이언트스텝</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b4f33c8174d3" data-source="global" data-new="true" data-title="" onclick="window.open('http://solidvfx.com/portfolio-item/mcdonalds-joy/','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/b4f33c8174d3/600/375" alt="" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">SOLID VFX</div>
+      <div class="card-title"></div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-source">SOLID VFX</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_d57ceb10b985" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="2304996" onclick="window.open('https://imagopictures.co.kr/CONTENTS/view/2304996','_blank')">
+    <img class="card-thumb" src="https://lh3.googleusercontent.com/D12uFiFWnqbuTtIZCIkXeEjqQixrR039lRHZ1zi4WSBrzCivRQrZz3jl056xEluuyIh7IS2zPbZXrMRNGXiI5COC8qt-hgMqOixgTXs2GLGgm3QH5MMW7Q=w800" alt="2304996" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">이마고픽쳐스</div>
+      <div class="card-title">2304996</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#4f4f4f"></span><span class="card-color-dot" style="background:#cbcbcb"></span></div>
+    
+    
+    <div class="card-source">이마고픽쳐스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_460cbb7b0fa2" data-color-hue="teal" data-color-hue="teal" data-source="global" data-new="true" data-title="993360245" onclick="window.open('https://vimeo.com/993360245','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/1909309843-ff38468ee601cb073712a1e25d000bb2497402a443fb8bbbb9b983b7ef34c57e-d?f=webp&amp;region=us" alt="993360245" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">RGB POST</div>
+      <div class="card-title">993360245</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#040404"></span><span class="card-color-dot" style="background:#17b5e1"></span></div>
+    
+    
+    <div class="card-source">RGB POST</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_fc12365f7a25" data-color-hue="blue" data-color-hue="blue" data-source="global" data-new="true" data-title="SBS 35th Anniversary Ident" onclick="window.open('https://www.behance.net/gallery/239740351/SBS-35th-Anniversary-Ident','_blank')">
+    <img class="card-thumb" src="https://mir-s3-cdn-cf.behance.net/project_modules/1400/ccee18239740351.692fdbaa35a07.jpg" alt="SBS 35th Anniversary Ident" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">HELIX D Studio</div>
+      <div class="card-title">SBS 35th Anniversary Ident</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#0c5de8"></span><span class="card-color-dot" style="background:#ac9c96"></span></div>
+    
+    
+    <div class="card-source">HELIX D Studio</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_50c12e9843ec" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="Introducing MIXXFFY | NMIXX Official Character" onclick="window.open('https://roundnround.io/introducing-mixxffy-nmixx-official-character','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/212bccfd-5b4f-41ca-b17d-7c467961fcf8/0a28ce50-8ed5-4855-8c01-4ca05edcb2f5_rw_1920.jpg?h=a6a5b29fad005c391b421e9466b1a5e9" alt="Introducing MIXXFFY | NMIXX Official Character" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">라운드앤라운드</div>
+      <div class="card-title">Introducing MIXXFFY | NMIXX Official Character</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">캐릭터·IP</span><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#9697fb"></span><span class="card-color-dot" style="background:#b474fa"></span></div>
+    
+    
+    <div class="card-source">라운드앤라운드</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_b8efa901addd" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Bi2718 1019071" onclick="window.open('https://www.tvcf.co.kr/play/bi2718-1019071','_blank')">
+    <img class="card-thumb" src="https://picsum.photos/seed/b8efa901addd/600/375" alt="Bi2718 1019071" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">더무브랩</div>
+      <div class="card-title">Bi2718 1019071</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">브랜드 캠페인</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#888"></span><span class="card-color-dot" style="background:#444"></span></div>
+    
+    
+    <div class="card-source">더무브랩</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_4caf8cdcaabf" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="1184740404" onclick="window.open('https://vimeo.com/1184740404','_blank')">
+    <img class="card-thumb" src="https://i.vimeocdn.com/video/2147957203-ec8f996464ab4ae6dd072a3dffb4f81848fedeeb4dbbaf12f0598af1cc1cb702-d?f=webp&amp;region=us" alt="1184740404" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">MOCA</div>
+      <div class="card-title">1184740404</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">VFX·버추얼</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#40433f"></span><span class="card-color-dot" style="background:#bcacab"></span></div>
+    
+    
+    <div class="card-source">MOCA</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_0197e194e0f8" data-color-hue="achromatic" data-color-hue="achromatic" data-source="global" data-new="true" data-title="Auv 2025 Showreel" onclick="window.open('https://auvcreative.com/auv-2025-showreel','_blank')">
+    <img class="card-thumb" src="https://freight.cargo.site/w/1200/i/M2566584927127338981372291132688/Thumbnail.jpg" alt="Auv 2025 Showreel" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">auv</div>
+      <div class="card-title">Auv 2025 Showreel</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">VFX·버추얼</span><span class="card-tag">제품 영상</span></div>
+    <div class="card-meta-bar"></div>
+    
+    
+    <div class="card-source">auv</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_ad972b81941b" data-color-hue="orange" data-color-hue="orange" data-source="global" data-new="true" data-title="KART RIDER DRIFT : SEASON 3 NITRO STUDIO" onclick="window.open('https://www.2grey.com/video/kart-rider-drift-season-3','_blank')">
+    <img class="card-thumb" src="https://www.2grey.com/video/download/30178/w/1200/ks_s3_0019.jpg" alt="KART RIDER DRIFT : SEASON 3 NITRO STUDIO" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">2GREY</div>
+      <div class="card-title">KART RIDER DRIFT : SEASON 3 NITRO STUDIO</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">게임·e스포츠</span><span class="card-tag">모션 타이틀</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#58534c"></span><span class="card-color-dot" style="background:#e6e0d2"></span></div>
+    
+    
+    <div class="card-source">2GREY</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_7f3b27855ee8" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="ICHEON FOUNTAIN OGEORI MEDIA FACADE IMMERSIVE EXHIBITION ICHEON CITY" onclick="window.open('https://www.tovworks.tv/work/icheon-fountain-ogeori-media-facade','_blank')">
+    <img class="card-thumb" src="https://framerusercontent.com/images/TXZxiriuAiLoiduh8xH8ALbZ0lw.jpg?scale-down-to=512&width=6000&height=3376" alt="ICHEON FOUNTAIN OGEORI MEDIA FACADE IMMERSIVE EXHIBITION ICHEON CITY" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">토브웍스</div>
+      <div class="card-title">ICHEON FOUNTAIN OGEORI MEDIA FACADE IMMERSIVE EXHIBITION ICHEON CITY</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">몰입형 설치</span><span class="card-tag">인터랙티브</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#161517"></span><span class="card-color-dot" style="background:#b8b2ad"></span></div>
+    
+    
+    <div class="card-source">토브웍스</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_35b17c7b8eda" data-color-hue="blue" data-color-hue="blue" data-source="kr" data-new="true" data-title="KT WEST: MONUMENT MEDIA ART 2026" onclick="window.open('https://superverymore.tv/kt-media-tower','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/4835c10532f8914866be88618fb54b34/e32f0509-d96a-471d-904e-71c9862998b4_rw_1920.png?h=0c02b5b29c86b7b35c8550f031015a4f" alt="KT WEST: MONUMENT MEDIA ART 2026" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">슈퍼베리모어</div>
+      <div class="card-title">KT WEST: MONUMENT MEDIA ART 2026</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"><span class="card-tag">모션 타이틀</span><span class="card-tag">채널 아이덴티티</span></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#8fa6d8"></span><span class="card-color-dot" style="background:#355ba1"></span></div>
+    
+    
+    <div class="card-source">슈퍼베리모어</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_7739c99791d8" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="LG유플러스 위치안심" onclick="window.open('https://dogvillestudio.com/19/?q=YToxOntzOjEyOiJrZXl3b3JkX3R5cGUiO3M6MzoiYWxsIjt9&bmode=view&idx=170281517&t=board','_blank')">
+    <img class="card-thumb" src="https://cdn.imweb.me/thumbnail/20260306/d2afe7acdf2dd.jpg" alt="LG유플러스 위치안심" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">도그빌 스튜디오</div>
+      <div class="card-title">LG유플러스 위치안심</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#b3b1af"></span><span class="card-color-dot" style="background:#090a0a"></span></div>
+    
+    
+    <div class="card-source">도그빌 스튜디오</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+  <div class="card" data-id="new_66be30379ced" data-color-hue="orange" data-color-hue="orange" data-source="kr" data-new="true" data-title="XPS WALLPAPER 2026 3D Art, Graphic Design, Motion Graphics" onclick="window.open('https://wootcreative.kr/dell-2026-xps-wallpaper','_blank')">
+    <img class="card-thumb" src="https://cdn.myportfolio.com/a92595ffb77364510f729ed9c538bfbc/3b676cda-38f1-412b-ab47-5a062c9c9ebe_rwc_0x0x721x961x721.jpg?h=71fab0f02c3d9ab9d7ed71d088fd25c7" alt="XPS WALLPAPER 2026 3D Art, Graphic Design, Motion Graphics" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-company">우트크리에이티브</div>
+      <div class="card-title">XPS WALLPAPER 2026 3D Art, Graphic Design, Motion Graphics</div>
+      <div class="card-date">2026-06-05</div>
+    </div>
+    <div class="card-new">NEW</div>
+    <div class="card-tags"></div>
+    <div class="card-meta-bar"><span class="card-color-dot" style="background:#141415"></span><span class="card-color-dot" style="background:#cfc7be"></span></div>
+    
+    
+    <div class="card-source">우트크리에이티브</div>
+    <div class="card-hover-hint"><span>상세 보기</span></div>
+  </div>
+
+</div>
+
+<!-- ══ ARCHIVE ══ -->
+<div style="margin-top:24px;"></div>
+
+<!-- 국내 accordion -->
+<div class="acc-wrap">
+  <div class="acc-header" id="acc-hdr-kr" onclick="toggleAcc('kr')">
+    <span class="acc-label">🇰🇷 국내</span>
+    <span class="acc-sub">21개 스튜디오</span>
+    <span class="acc-arrow" id="acc-arrow-kr">›</span>
+  </div>
+  <div class="acc-body" id="acc-body-kr">
+    <div class="archive-grid" style="padding-top:12px;">
+      <div class="archive-card" onclick="window.open('https://www.giantstep.co.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(200,255,0,0.1);">🇰🇷</div>
+        <div class="archive-name">자이언트스텝</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://ayoba.co.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(0,212,255,0.1);">🇰🇷</div>
+        <div class="archive-name">아요바</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('http://solidvfx.com','_blank')">
+        <div class="archive-icon" style="background:rgba(255,77,109,0.1);">🇰🇷</div>
+        <div class="archive-name">SOLID VFX</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.divoproduction.com','_blank')">
+        <div class="archive-icon" style="background:rgba(251,146,60,0.1);">🇰🇷</div>
+        <div class="archive-name">디보프로덕션</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.imagopictures.co.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(74,222,128,0.1);">🇰🇷</div>
+        <div class="archive-name">이마고픽쳐스</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.jwmedia.tv','_blank')">
+        <div class="archive-icon" style="background:rgba(167,139,250,0.1);">🇰🇷</div>
+        <div class="archive-name">제이더블유미디어</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.theauthentic.co.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(251,113,133,0.1);">🇰🇷</div>
+        <div class="archive-name">The Authentic</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://vimeo.com/user147249942','_blank')">
+        <div class="archive-icon" style="background:rgba(99,102,241,0.1);">🇰🇷</div>
+        <div class="archive-name">RGB POST</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.behance.net/helix3design','_blank')">
+        <div class="archive-icon" style="background:rgba(148,163,184,0.1);">🇰🇷</div>
+        <div class="archive-name">HELIX D Studio</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('http://www.mediabalance.co.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(234,179,8,0.1);">🇰🇷</div>
+        <div class="archive-name">미디어밸런스</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://roundnround.io','_blank')">
+        <div class="archive-icon" style="background:rgba(200,255,0,0.1);">🇰🇷</div>
+        <div class="archive-name">라운드앤라운드</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://crefe.me/MOVE_LAB/shots','_blank')">
+        <div class="archive-icon" style="background:rgba(0,212,255,0.1);">🇰🇷</div>
+        <div class="archive-name">더무브랩</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://vimeo.com/user227643521','_blank')">
+        <div class="archive-icon" style="background:rgba(255,77,109,0.1);">🇰🇷</div>
+        <div class="archive-name">MOCA</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://auvcreative.com','_blank')">
+        <div class="archive-icon" style="background:rgba(251,146,60,0.1);">🇰🇷</div>
+        <div class="archive-name">auv</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.2grey.com','_blank')">
+        <div class="archive-icon" style="background:rgba(74,222,128,0.1);">🇰🇷</div>
+        <div class="archive-name">2GREY</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.tovworks.tv','_blank')">
+        <div class="archive-icon" style="background:rgba(167,139,250,0.1);">🇰🇷</div>
+        <div class="archive-name">토브웍스</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://superverymore.tv','_blank')">
+        <div class="archive-icon" style="background:rgba(251,113,133,0.1);">🇰🇷</div>
+        <div class="archive-name">슈퍼베리모어</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://dogvillestudio.com','_blank')">
+        <div class="archive-icon" style="background:rgba(99,102,241,0.1);">🇰🇷</div>
+        <div class="archive-name">도그빌 스튜디오</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://nerdyau.com','_blank')">
+        <div class="archive-icon" style="background:rgba(148,163,184,0.1);">🇰🇷</div>
+        <div class="archive-name">엔에이유</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://veig.tv','_blank')">
+        <div class="archive-icon" style="background:rgba(234,179,8,0.1);">🇰🇷</div>
+        <div class="archive-name">베이그</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://wootcreative.kr','_blank')">
+        <div class="archive-icon" style="background:rgba(200,255,0,0.1);">🇰🇷</div>
+        <div class="archive-name">우트크리에이티브</div>
+        <div class="archive-meta">크리에이티브 스튜디오 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 해외 accordion -->
+<div class="acc-wrap">
+  <div class="acc-header" id="acc-hdr-global" onclick="toggleAcc('global')">
+    <span class="acc-label">🌐 해외</span>
+    <span class="acc-sub">10개 스튜디오</span>
+    <span class="acc-arrow" id="acc-arrow-global">›</span>
+  </div>
+  <div class="acc-body" id="acc-body-global">
+    <div class="archive-grid" style="padding-top:12px;">
+      <div class="archive-card" onclick="window.open('https://www.teamlab.art','_blank')">
+        <div class="archive-icon" style="background:rgba(0,212,255,0.1);">🇯🇵</div>
+        <div class="archive-name">teamLab</div>
+        <div class="archive-meta">몰입형 디지털 아트 · 도쿄<br>인터랙티브 자연 · 보더리스 뮤지엄</div>
+        <div class="archive-count">↗ 686 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://momentfactory.com','_blank')">
+        <div class="archive-icon" style="background:rgba(255,77,109,0.1);">🇨🇦</div>
+        <div class="archive-name">Moment Factory</div>
+        <div class="archive-meta">멀티미디어 엔터테인먼트 · 몬트리올<br>프로젝션 매핑 · 야외 설치</div>
+        <div class="archive-count">↗ 15 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.random-international.com','_blank')">
+        <div class="archive-icon" style="background:rgba(0,212,255,0.1);">🇬🇧</div>
+        <div class="archive-name">Random International</div>
+        <div class="archive-meta">인터랙티브 조각 · 런던<br>Rain Room · 관객 반응형 설치</div>
+        <div class="archive-count">↗ 52 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.universaleverything.com','_blank')">
+        <div class="archive-icon" style="background:rgba(251,146,60,0.1);">🇬🇧</div>
+        <div class="archive-name">Universal Everything</div>
+        <div class="archive-meta">제너러티브 아트 · 셰필드<br>스크린 설치 · 디지털 생명체</div>
+        <div class="archive-count">↗ 15 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.unit9.com','_blank')">
+        <div class="archive-icon" style="background:rgba(200,255,0,0.1);">🇬🇧</div>
+        <div class="archive-name">UNIT9</div>
+        <div class="archive-meta">인터랙티브 캠페인 · 런던<br>Nike · Google · Adidas</div>
+        <div class="archive-count">↗ 36 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://activetheory.net','_blank')">
+        <div class="archive-icon" style="background:rgba(0,212,255,0.1);">🇺🇸</div>
+        <div class="archive-name">Active Theory</div>
+        <div class="archive-meta">인터랙티브 디지털 · LA<br>Nike · PlayStation · Google Pixel</div>
+        <div class="archive-count">↗ 14 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://mvsm.com','_blank')">
+        <div class="archive-icon" style="background:rgba(255,77,109,0.1);">🇬🇧</div>
+        <div class="archive-name">ManvsMachine</div>
+        <div class="archive-meta">모션 · 디자인 · 비주얼 아트 · 런던/LA<br>수상 64개 이상 · 글로벌 브랜드</div>
+        <div class="archive-count">↗ 9 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.b-reel.com','_blank')">
+        <div class="archive-icon" style="background:rgba(251,146,60,0.1);">🇸🇪</div>
+        <div class="archive-name">B-Reel</div>
+        <div class="archive-meta">크리에이티브 에이전시 · 스톡홀름/LA<br>Google · HBO · Spotify · IKEA</div>
+        <div class="archive-count">↗ 14 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://heyhush.com','_blank')">
+        <div class="archive-icon" style="background:rgba(74,222,128,0.1);">🇺🇸</div>
+        <div class="archive-name">Hush</div>
+        <div class="archive-meta">익스피리언스 디자인 · 뉴욕<br>Uber · Citibank · 공간 미디어파사드</div>
+        <div class="archive-count">↗ 34 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://refikanadol.com','_blank')">
+        <div class="archive-icon" style="background:rgba(167,139,250,0.1);">🇺🇸</div>
+        <div class="archive-name">Refik Anadol Studio</div>
+        <div class="archive-meta">AI 미디어아트 · LA<br>머신러닝 데이터 조각 · MoMA</div>
+        <div class="archive-count">↗ 66 works tracked</div>
+        <div class="archive-view-hint">홈페이지 →</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ SCHEDULE ══ -->
+<div class="schedule-bar">
+  <div class="schedule-title">모니터링 스케줄</div>
+  <div class="schedule-items">
+    <div class="schedule-item"><span class="schedule-time">09:00 KST</span><span class="schedule-label">오전 — 스튜디오 신규 작품 확인</span></div>
+    <div class="schedule-item"><span class="schedule-time">19:00 KST</span><span class="schedule-label">저녁 — 전체 스튜디오 재스캔</span></div>
+    <div class="schedule-item"><span class="schedule-time" style="background:rgba(0,212,255,0.12);color:var(--accent2);">매월 1일</span><span class="schedule-label">스튜디오 리스트 갱신 — 클라이언트·어워드·크레딧 역추적</span></div>
+    <div class="schedule-item" style="margin-left:auto;"><span class="schedule-time" style="background:rgba(255,77,109,0.12);color:var(--new);">SMTP</span><span class="schedule-label">신규 작품 발견 시 즉시 이메일 발송</span></div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer>
+  <div>© 2026 Portfolio Monitor · GitHub Pages · GitHub Actions</div>
+  <div class="tech-stack">
+    <span class="tech-tag">requests</span>
+    <span class="tech-tag">BeautifulSoup4</span>
+    <span class="tech-tag">feedparser</span>
+    <span class="tech-tag">GitHub Actions</span>
+    <span class="tech-tag">SMTP</span>
+  </div>
+</footer>
+
+<!-- ══════════════════════════════════════════
+     MODAL — 작품 상세
+══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="cardModal" onclick="handleBackdropClick(event, 'cardModal')">
+  <div class="modal" id="cardModalInner">
+    <div class="modal-visual" id="modalVisual"></div>
+    <div class="modal-body">
+      <div class="modal-header-row">
+        <div class="modal-title" id="modalTitle"></div>
+        <button class="modal-close" onclick="closeModal('cardModal')">✕</button>
+      </div>
+      <div class="modal-tags" id="modalTags"></div>
+      <div class="modal-desc" id="modalDesc"></div>
+      <div class="modal-meta-grid" id="modalMeta"></div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="modalLinkBtn">↗ 원본 보기</button>
+        <button class="btn-secondary" onclick="closeModal('cardModal')">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL — 아카이브 스튜디오
+══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="archiveModal" onclick="handleBackdropClick(event, 'archiveModal')">
+  <div class="modal" id="archiveModalInner">
+    <div class="archive-modal-header">
+      <div class="archive-modal-studio">
+        <div class="archive-modal-icon" id="archiveModalIcon"></div>
+        <div>
+          <div class="archive-modal-name" id="archiveModalName"></div>
+          <div class="archive-modal-sub" id="archiveModalSub"></div>
+        </div>
+      </div>
+      <button class="modal-close" onclick="closeModal('archiveModal')">✕</button>
+    </div>
+    <div class="archive-works" id="archiveWorks"></div>
+  </div>
+</div>
+
+<script>
+/* ─── 카드 데이터 ─── */
+const THUMBS = {
+  1: 'https://picsum.photos/seed/resonance-audio/600/375',
+  2: 'https://picsum.photos/seed/luminary3d/600/375',
+  3: 'https://picsum.photos/seed/voidspace-pavilion/600/375',
+  4: 'https://picsum.photos/seed/flux-generative/600/375',
+  5: 'https://picsum.photos/seed/pixellog-exhibition/600/375',
+  6: 'https://picsum.photos/seed/mirage-hologram/600/375',
+  7: 'https://picsum.photos/seed/gonggan-studio/600/375',
+  8: 'https://picsum.photos/seed/echo-acoustic/600/375',
+  9: 'https://picsum.photos/seed/neon-archive-city/600/375',
+};
+
+const CARDS = {
+  1: {
+    abbr: 'U9', bg: 'linear-gradient(135deg,#1a0a2e,#2d1b69)', color: '#7c3aed',
+    title: 'Resonance — Spatial Audio Experience',
+    company: 'UNIT9', source: 'UNIT9 🇬🇧', isNew: true,
+    date: '2026-05-26', category: 'Interactive / Audio',
+    url: 'https://www.unit9.com',
+    desc: '공간 음향과 3D 비주얼을 결합한 몰입형 브랜드 익스피리언스. 방문자의 인터랙션에 반응하는 파티클 사운드 레이어가 물리 공간의 반향을 시뮬레이션한다.'
+  },
+  2: {
+    abbr: 'AT', bg: 'linear-gradient(135deg,#0a1628,#0d3b8a)', color: '#3b82f6',
+    title: 'Luminary — Immersive 3D Journey',
+    company: 'Active Theory', source: 'Active Theory 🇺🇸', isNew: true,
+    date: '2026-05-26', category: '3D / Interactive',
+    url: 'https://activetheory.net',
+    desc: '실시간 볼류메트릭 라이팅 기반의 3D 브랜드 경험. GLSL 셰이더로 빛의 물리적 산란을 표현하며 모바일·데스크탑 모두 60fps를 유지한다.'
+  },
+  3: {
+    abbr: 'MF', bg: 'linear-gradient(135deg,#0a1a0a,#0d4a2a)', color: '#22c55e',
+    title: 'Void Space — Zero Gravity Pavilion',
+    company: 'Moment Factory', source: 'Moment Factory 🇨🇦', isNew: true,
+    date: '2026-05-25', category: 'Exhibition / Spatial',
+    url: 'https://www.momentfactory.com',
+    desc: '무중력 공간을 모티프로 한 멀티미디어 파빌리온. 프로젝션 매핑과 인터랙티브 환경 제어를 결합해 관람객이 공간 자체를 조작하는 경험을 구현했다.'
+  },
+  4: {
+    abbr: 'BR', bg: 'linear-gradient(135deg,#1a0a0a,#6b1a1a)', color: '#ef4444',
+    title: 'Flux — Generative Identity System',
+    company: 'B-Reel', source: 'B-Reel 🇸🇪', isNew: false,
+    date: '2026-05-24', category: 'Generative / Branding',
+    url: 'https://www.b-reel.com',
+    desc: '실시간 생성 알고리즘으로 구동되는 브랜드 아이덴티티 시스템. 방문 환경 변수를 입력값으로 삼아 매 방문마다 고유한 비주얼 언어를 생성한다.'
+  },
+  5: {
+    abbr: 'PX', bg: 'linear-gradient(135deg,#1a1200,#5c3d00)', color: '#f59e0b',
+    title: '플러스엑스 — 브랜드 익스피리언스 캠페인',
+    company: '플러스엑스', source: '플러스엑스 🇰🇷', isNew: true,
+    date: '2026-05-26', category: 'Brand Experience',
+    url: 'https://www.plus-ex.com',
+    desc: '아모레퍼시픽 신제품 런칭을 위한 통합 브랜드 익스피리언스. 오프라인 팝업과 디지털 캠페인을 유기적으로 연결한 BX 디자인 시스템.'
+  },
+  6: {
+    abbr: 'DS', bg: 'linear-gradient(135deg,#001a1a,#004d4d)', color: '#06b6d4',
+    title: "d'strict — Anamorphic Media Installation",
+    company: "d'strict", source: "d'strict 🇰🇷", isNew: true,
+    date: '2026-05-25', category: 'Media Art / Installation',
+    url: 'https://www.dstrict.com',
+    desc: '코엑스 K-POP SQUARE 아나모픽 LED 설치 신작. 대형 곡면 스크린의 물리적 왜곡을 역이용해 3D 착시 효과를 극대화한 미디어아트.'
+  },
+  7: {
+    abbr: 'GS', bg: 'linear-gradient(135deg,#0d0d1a,#1a1a4d)', color: '#8b5cf6',
+    title: '자이언트스텝 — Virtual Brand Experience',
+    company: '자이언트스텝', source: '자이언트스텝 🇰🇷', isNew: false,
+    date: '2026-05-23', category: 'VFX / Virtual Production',
+    url: 'https://www.giantstep.co.kr',
+    desc: '현대자동차 신차 글로벌 런칭을 위한 버추얼 프로덕션. 실사와 CG를 완벽하게 합성한 버추얼 스튜디오 환경에서 전 과정을 진행했다.'
+  },
+  8: {
+    abbr: 'HU', bg: 'linear-gradient(135deg,#0d1a0d,#1a4d1a)', color: '#84cc16',
+    title: 'Echo Chamber — Acoustic Architecture',
+    company: 'Hush', source: 'Hush 🇺🇸', isNew: true,
+    date: '2026-05-25', category: 'Experience Design / Space',
+    url: 'https://heyhush.com',
+    desc: '글로벌 기업 본사 로비를 위한 인터랙티브 미디어 파사드. 실시간 데이터 피드를 시각화해 공간이 조직의 살아있는 대시보드가 되는 경험을 설계했다.'
+  },
+  9: {
+    abbr: 'MM', bg: 'linear-gradient(135deg,#1a001a,#4d004d)', color: '#e879f9',
+    title: 'Neon Archive — Cyberpunk Heritage',
+    company: 'ManvsMachine', source: 'ManvsMachine 🇬🇧', isNew: false,
+    date: '2026-05-22', category: 'Motion / Visual Art',
+    url: 'https://mvsm.com',
+    desc: '글로벌 럭셔리 브랜드 캠페인을 위한 제너러티브 모션 아이덴티티. 알고리즘 기반의 비주얼 시스템이 매체별로 무한 변주되는 브랜드 언어를 생성한다.'
+  }
+};
+
+/* ─── 아카이브 데이터 ─── */
+const ARCHIVES = {
+  /* ── 국내 ── */
+  giantstep: {
+    icon: '🇰🇷', iconBg: 'rgba(200,255,0,0.12)',
+    name: '자이언트스텝', sub: 'VFX · 실감콘텐츠 · 버추얼휴먼 · 서울',
+    url: 'https://www.giantstep.co.kr',
+    works: [
+      { title: 'IONIQ 6 버추얼 런칭 이벤트', cat: 'VFX · Virtual Event', year: '2022', color: '#c8ff00' },
+      { title: '현대모터스포츠 XR 경험', cat: 'Extended Reality', year: '2023', color: '#c8ff00' },
+      { title: 'SK이노베이션 버추얼 컨퍼런스', cat: 'Virtual Production', year: '2023', color: '#c8ff00' },
+      { title: '삼성 갤럭시 언팩 프리즘', cat: 'CGI · Brand Film', year: '2024', color: '#c8ff00' },
+      { title: 'LG OLED 캠페인 VFX', cat: 'VFX · Digital', year: '2024', color: '#c8ff00' },
+    ]
+  },
+  wysiwyg: {
+    icon: '🇰🇷', iconBg: 'rgba(0,212,255,0.12)',
+    name: '위지윅스튜디오', sub: 'VFX · 미디어아트 · 실감콘텐츠 · 서울',
+    url: 'https://wswgnewmedia.com/work',
+    works: [
+      { title: 'DDP 서울라이트 2024 — 5작품 출품', cat: 'Media Art · Festival', year: '2024', color: '#00d4ff' },
+      { title: 'aespa XR 콘서트', cat: 'XR · Virtual Production', year: '2023', color: '#00d4ff' },
+      { title: 'LG OLED 가상 전시회 (CES 2021)', cat: 'Virtual Exhibition', year: '2021', color: '#00d4ff' },
+      { title: 'Dior · Gucci · Louis Vuitton 브랜드 영상', cat: 'Brand Film · VFX', year: '2023', color: '#00d4ff' },
+      { title: '익산 미륵사지 세계유산 미디어아트', cat: 'Heritage Media Art', year: '2023', color: '#00d4ff' },
+    ]
+  },
+  plusx: {
+    icon: '🇰🇷', iconBg: 'rgba(255,77,109,0.12)',
+    name: '플러스엑스', sub: '브랜드 익스피리언스 · BX 디자인 · 서울',
+    url: 'https://www.plus-ex.com',
+    works: [
+      { title: '아모레퍼시픽 브랜드 아이덴티티', cat: 'Brand Identity', year: '2021', color: '#ff4d6d' },
+      { title: '현대카드 M포인트 BX', cat: 'Brand Experience', year: '2022', color: '#ff4d6d' },
+      { title: 'SK그룹 계열사 통합 BX', cat: 'Brand System', year: '2023', color: '#ff4d6d' },
+      { title: 'LG전자 글로벌 캠페인', cat: 'Campaign Design', year: '2024', color: '#ff4d6d' },
+      { title: '네이버 서비스 BX 리뉴얼', cat: 'Digital BX', year: '2024', color: '#ff4d6d' },
+    ]
+  },
+  ordinarypeople: {
+    icon: '🇰🇷', iconBg: 'rgba(74,222,128,0.12)',
+    name: 'Ordinary People', sub: '모션 · 브랜드 · 애니메이션 · 서울',
+    url: 'https://ordinarypeople.info',
+    works: [
+      { title: '브랜드 모션 아이덴티티', cat: 'Motion · Brand', year: '2022', color: '#4ade80' },
+      { title: '독립 애니메이션 시리즈', cat: 'Animation', year: '2023', color: '#4ade80' },
+      { title: '패션 브랜드 비주얼 캠페인', cat: 'Campaign Visual', year: '2023', color: '#4ade80' },
+      { title: '크리에이티브 디렉션 프로젝트', cat: 'Creative Direction', year: '2024', color: '#4ade80' },
+    ]
+  },
+  locus: {
+    icon: '🇰🇷', iconBg: 'rgba(167,139,250,0.12)',
+    name: '로커스', sub: 'VFX · 디지털 콘텐츠 · 서울',
+    url: 'https://www.locus.com',
+    works: [
+      { title: '서울라이트 DDLP 2022', cat: 'Media Facade', year: '2022', color: '#a78bfa' },
+      { title: '서울라이트 DDLP 2023', cat: 'Media Facade', year: '2023', color: '#a78bfa' },
+      { title: '현대차 런칭 모션 VFX', cat: 'Motion · VFX', year: '2023', color: '#a78bfa' },
+      { title: '인천공항 미디어월', cat: 'Media Installation', year: '2024', color: '#a78bfa' },
+    ]
+  },
+  fnt: {
+    icon: '🇰🇷', iconBg: 'rgba(251,113,133,0.12)',
+    name: '스튜디오 fnt', sub: '그래픽 · 모션 · BX · 서울',
+    url: 'https://studiofnt.com',
+    works: [
+      { title: '아모레퍼시픽 타이포그래피 캠페인', cat: 'Typography · Motion', year: '2021', color: '#fb7185' },
+      { title: '레드닷 수상 서체 디자인', cat: 'Type Design', year: '2022', color: '#fb7185' },
+      { title: 'D&AD 수상 그래픽 작업', cat: 'Graphic · Identity', year: '2023', color: '#fb7185' },
+      { title: '문화재청 아이덴티티', cat: 'Brand Identity', year: '2024', color: '#fb7185' },
+    ]
+  },
+  twogrey: {
+    icon: '🇰🇷', iconBg: 'rgba(148,163,184,0.12)',
+    name: '2grey', sub: '브랜드 · 모션 · 크리에이티브 · 서울',
+    url: 'https://www.2grey.com',
+    works: [
+      { title: '브랜드 런칭 모션', cat: 'Motion · Brand', year: '2022', color: '#94a3b8' },
+      { title: '패션 브랜드 캠페인 비주얼', cat: 'Campaign Visual', year: '2023', color: '#94a3b8' },
+      { title: '디지털 인터랙티브 경험', cat: 'Digital Experience', year: '2023', color: '#94a3b8' },
+      { title: '크리에이티브 캠페인', cat: 'Creative Campaign', year: '2024', color: '#94a3b8' },
+    ]
+  },
+  /* ── 해외 ── */
+  unit9: {
+    icon: '🇬🇧', iconBg: 'rgba(200,255,0,0.12)',
+    name: 'UNIT9', sub: '인터랙티브 캠페인 · 런던',
+    url: 'https://www.unit9.com',
+    works: [
+      { title: 'Nike Air Max Digital Experience', cat: 'Interactive Campaign', year: '2020', color: '#c8ff00' },
+      { title: 'Google Arts & Culture AR', cat: 'Augmented Reality', year: '2021', color: '#c8ff00' },
+      { title: 'Adidas Metaverse Launch', cat: 'Virtual Experience', year: '2022', color: '#c8ff00' },
+      { title: 'Apple Vision Pro Showcase', cat: 'Spatial Computing', year: '2023', color: '#c8ff00' },
+      { title: 'Spotify Wrapped Interactive', cat: 'Data Experience', year: '2024', color: '#c8ff00' },
+    ]
+  },
+  activetheory: {
+    icon: '🇺🇸', iconBg: 'rgba(0,212,255,0.12)',
+    name: 'Active Theory', sub: '인터랙티브 디지털 · LA',
+    url: 'https://activetheory.net',
+    works: [
+      { title: 'Nike By You Interactive', cat: 'E-commerce Experience', year: '2020', color: '#00d4ff' },
+      { title: 'PlayStation 5 Launch Site', cat: 'Interactive Web', year: '2020', color: '#00d4ff' },
+      { title: 'Google Pixel 7 Experience', cat: 'Interactive Digital', year: '2022', color: '#00d4ff' },
+      { title: 'Amazon Prime Interactive', cat: 'Streaming Experience', year: '2023', color: '#00d4ff' },
+    ]
+  },
+  manvsmachine: {
+    icon: '🇬🇧', iconBg: 'rgba(255,77,109,0.12)',
+    name: 'ManvsMachine', sub: '모션 · 디자인 · 비주얼 아트 · 런던/LA',
+    url: 'https://mvsm.com',
+    works: [
+      { title: 'Apple — Product Launch Film', cat: 'Motion · Brand', year: '2021', color: '#ff4d6d' },
+      { title: 'Nike — Campaign Visual Identity', cat: 'Motion · Campaign', year: '2022', color: '#ff4d6d' },
+      { title: 'Google — Brand Experience', cat: 'Visual Art · Motion', year: '2023', color: '#ff4d6d' },
+      { title: 'BMW — Generative Brand Film', cat: 'CGI · Motion', year: '2024', color: '#ff4d6d' },
+    ]
+  },
+  breel: {
+    icon: '🇸🇪', iconBg: 'rgba(251,146,60,0.12)',
+    name: 'B-Reel', sub: '크리에이티브 에이전시 · 스톡홀름/LA',
+    url: 'https://www.b-reel.com',
+    works: [
+      { title: 'Google Chrome Interactive', cat: 'Creative Coding', year: '2019', color: '#fb923c' },
+      { title: 'HBO Westworld Experience', cat: 'Interactive Narrative', year: '2020', color: '#fb923c' },
+      { title: 'Spotify Audio Visualizer', cat: 'Music Experience', year: '2022', color: '#fb923c' },
+      { title: 'IKEA Interactive Catalogue', cat: 'AR Shopping', year: '2023', color: '#fb923c' },
+    ]
+  },
+  hush: {
+    icon: '🇺🇸', iconBg: 'rgba(74,222,128,0.12)',
+    name: 'Hush', sub: '익스피리언스 디자인 · 뉴욕',
+    url: 'https://heyhush.com',
+    works: [
+      { title: 'Uber Global HQ Experience', cat: 'Workplace Experience', year: '2022', color: '#4ade80' },
+      { title: 'Citibank Manhattan Media Facade', cat: 'Media Facade', year: '2023', color: '#4ade80' },
+      { title: 'Commonwealth Fusion Systems Art', cat: 'Art Commission', year: '2023', color: '#4ade80' },
+      { title: 'Brand Space Immersive Design', cat: 'Immersive Experience', year: '2024', color: '#4ade80' },
+    ]
+  },
+  dstrict: {
+    icon: '🇰🇷', iconBg: 'rgba(200,255,0,0.12)',
+    name: "d'strict",
+    sub: '미디어아트 · 몰입형 전시 · 서울',
+    url: 'https://www.dstrict.com',
+    works: [
+      { title: 'WAVE — 코엑스 아쿠아리움', cat: 'Anamorphic / Media Art', year: '2020', color: '#c8ff00' },
+      { title: 'ARTE MUSEUM 여수', cat: 'Immersive Exhibition', year: '2021', color: '#c8ff00' },
+      { title: 'HYPER-NATURE', cat: 'Digital Nature Experience', year: '2022', color: '#c8ff00' },
+      { title: 'SM TOWN 전시관', cat: 'Brand Experience', year: '2022', color: '#c8ff00' },
+      { title: 'ARTE MUSEUM 강릉', cat: 'Immersive Exhibition', year: '2023', color: '#c8ff00' },
+      { title: 'ARTE MUSEUM 제주', cat: 'Immersive Exhibition', year: '2024', color: '#c8ff00' },
+      { title: 'PLANET:IX 광화문', cat: 'Media Facade', year: '2024', color: '#c8ff00' },
+    ]
+  },
+  teamlab: {
+    icon: '🇯🇵', iconBg: 'rgba(0,212,255,0.12)',
+    name: 'teamLab',
+    sub: '몰입형 디지털 아트 · 도쿄',
+    url: 'https://www.teamlab.art',
+    works: [
+      { title: 'teamLab Borderless 도쿄', cat: 'Immersive Museum', year: '2018', color: '#00d4ff' },
+      { title: 'teamLab Planets', cat: 'Body Immersive', year: '2018', color: '#00d4ff' },
+      { title: 'Resonating Life in the Acorn Forest', cat: 'Interactive Nature', year: '2020', color: '#00d4ff' },
+      { title: 'Flowers and People, Cannot be Controlled', cat: 'Digital Art', year: '2022', color: '#00d4ff' },
+      { title: 'teamLab Borderless 상하이', cat: 'Immersive Museum', year: '2023', color: '#00d4ff' },
+      { title: 'Massless Clouds Between Sculpture and Life', cat: 'Sculpture / Digital', year: '2024', color: '#00d4ff' },
+      { title: 'teamLab Borderless 제다', cat: 'Immersive Museum', year: '2024', color: '#00d4ff' },
+    ]
+  },
+  momentfactory: {
+    icon: '🇨🇦', iconBg: 'rgba(255,77,109,0.12)',
+    name: 'Moment Factory',
+    sub: '멀티미디어 엔터테인먼트 · 몬트리올',
+    url: 'https://www.momentfactory.com',
+    works: [
+      { title: 'Foresta Lumina', cat: 'Outdoor Multimedia', year: '2015', color: '#ff4d6d' },
+      { title: 'Nine Inch Nails Tour', cat: 'Concert Visual', year: '2018', color: '#ff4d6d' },
+      { title: 'Lumina Walk 싱가포르', cat: 'Outdoor Experience', year: '2019', color: '#ff4d6d' },
+      { title: 'Sagrada Família Light Show', cat: 'Architectural Projection', year: '2021', color: '#ff4d6d' },
+      { title: 'Warner Bros. Studio Tour', cat: 'Theme Experience', year: '2023', color: '#ff4d6d' },
+      { title: 'Aura — Notre-Dame de Paris', cat: 'Architectural Projection', year: '2024', color: '#ff4d6d' },
+    ]
+  },
+  random: {
+    icon: '🇬🇧', iconBg: 'rgba(0,212,255,0.12)',
+    name: 'Random International',
+    sub: '인터랙티브 조각 · 런던',
+    url: 'https://www.random-international.com',
+    works: [
+      { title: 'Audience', cat: 'Interactive Sculpture', year: '2008', color: '#00d4ff' },
+      { title: 'Rain Room', cat: 'Immersive Installation', year: '2012', color: '#00d4ff' },
+      { title: 'Future Self', cat: 'Interactive Sculpture', year: '2012', color: '#00d4ff' },
+      { title: 'Swarm Study / VII', cat: 'Generative Installation', year: '2018', color: '#00d4ff' },
+      { title: 'Study for Fifteen Moments', cat: 'Kinetic Light', year: '2021', color: '#00d4ff' },
+      { title: 'Fifteen Points', cat: 'Interactive Sculpture', year: '2023', color: '#00d4ff' },
+    ]
+  },
+  universaleverything: {
+    icon: '🇬🇧', iconBg: 'rgba(251,146,60,0.12)',
+    name: 'Universal Everything',
+    sub: '제너러티브 아트 · 셰필드',
+    url: 'https://www.universaleverything.com',
+    works: [
+      { title: 'Tall Buildings', cat: 'Generative Screen', year: '2010', color: '#fb923c' },
+      { title: 'Future You', cat: 'Interactive Portrait', year: '2012', color: '#fb923c' },
+      { title: 'Walking City', cat: 'Generative Animation', year: '2014', color: '#fb923c' },
+      { title: 'Communion', cat: 'Digital Installation', year: '2018', color: '#fb923c' },
+      { title: 'Soft Body', cat: 'Generative Creature', year: '2020', color: '#fb923c' },
+      { title: 'Ever Present', cat: 'Permanent Screen Installation', year: '2022', color: '#fb923c' },
+    ]
+  },
+  mlf: {
+    icon: '🇬🇧', iconBg: 'rgba(74,222,128,0.12)',
+    name: 'Marshmallow Laser Feast',
+    sub: '몰입형 자연 설치 · 런던',
+    url: 'https://www.marshmallowlaserfeast.com',
+    works: [
+      { title: 'Remain in Light', cat: 'LiDAR Forest Experience', year: '2015', color: '#4ade80' },
+      { title: 'In the Eyes of the Animal', cat: 'VR Nature Experience', year: '2015', color: '#4ade80' },
+      { title: 'We Live in an Ocean of Air', cat: 'Immersive Installation', year: '2018', color: '#4ade80' },
+      { title: 'Tree of Life — EXPO 2020', cat: 'Outdoor Installation', year: '2021', color: '#4ade80' },
+      { title: 'Drifting in Silence', cat: 'Sensory Experience', year: '2023', color: '#4ade80' },
+    ]
+  },
+  refik: {
+    icon: '🇺🇸', iconBg: 'rgba(167,139,250,0.12)',
+    name: 'Refik Anadol Studio',
+    sub: 'AI 미디어아트 · LA',
+    url: 'https://refikanadol.com',
+    works: [
+      { title: 'Archive Dreaming', cat: 'AI Data Sculpture', year: '2017', color: '#a78bfa' },
+      { title: 'Melting Memories', cat: 'Neural Network Art', year: '2018', color: '#a78bfa' },
+      { title: 'WDCH Dreams', cat: 'Architectural Projection', year: '2018', color: '#a78bfa' },
+      { title: 'Machine Hallucinations — Space', cat: 'AI Media Art', year: '2019', color: '#a78bfa' },
+      { title: 'Quantum Memories', cat: 'AI Data Sculpture', year: '2020', color: '#a78bfa' },
+      { title: 'Living Architecture — Casa Batlló', cat: 'AI Projection', year: '2021', color: '#a78bfa' },
+      { title: 'Unsupervised — MoMA', cat: 'AI Permanent Installation', year: '2023', color: '#a78bfa' },
+    ]
+  },
+  onformative: {
+    icon: '🇩🇪', iconBg: 'rgba(251,113,133,0.12)',
+    name: 'onformative',
+    sub: '제너러티브 · 인터랙티브 · 베를린',
+    url: 'https://onformative.com',
+    works: [
+      { title: 'Unnamed Soundsculpture', cat: 'Generative Installation', year: '2012', color: '#fb7185' },
+      { title: 'Google Faces', cat: 'Data Visualization', year: '2012', color: '#fb7185' },
+      { title: 'Universe', cat: 'Interactive Installation', year: '2013', color: '#fb7185' },
+      { title: 'Black Hole', cat: 'Generative Screen', year: '2014', color: '#fb7185' },
+      { title: 'Portrait in Motion', cat: 'Interactive Portrait', year: '2015', color: '#fb7185' },
+      { title: 'Cubic Attraction', cat: 'Public Installation', year: '2019', color: '#fb7185' },
+    ]
+  }
+};
+
+/* ─── 카드 모달 열기 ─── */
+function openCard(id) {
+  const d = CARDS[id];
+  if (!d) return;
+
+  const vis = document.getElementById('modalVisual');
+  vis.style.cssText = '';
+  vis.innerHTML = `<img src="${THUMBS[id]}" alt="${d.abbr}" />`;
+  document.getElementById('modalTitle').textContent = d.title;
+
+  const tagsEl = document.getElementById('modalTags');
+  tagsEl.innerHTML = `
+    <span class="modal-tag source">${d.source}</span>
+    ${d.isNew ? '<span class="modal-tag new">NEW</span>' : ''}
+    <span class="modal-tag category">${d.category}</span>
+  `;
+
+  document.getElementById('modalDesc').textContent = d.desc;
+
+  document.getElementById('modalMeta').innerHTML = `
+    <div class="modal-meta-item"><div class="modal-meta-label">출처</div><div class="modal-meta-value">${d.source}</div></div>
+    <div class="modal-meta-item"><div class="modal-meta-label">수집일</div><div class="modal-meta-value">${d.date}</div></div>
+    <div class="modal-meta-item"><div class="modal-meta-label">카테고리</div><div class="modal-meta-value">${d.category}</div></div>
+    <div class="modal-meta-item"><div class="modal-meta-label">제작사</div><div class="modal-meta-value">${d.company}</div></div>
+  `;
+
+  const linkBtn = document.getElementById('modalLinkBtn');
+  linkBtn.onclick = () => window.open(d.url, '_blank');
+
+  document.getElementById('cardModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* ─── 아카이브 모달 열기 ─── */
+function openArchive(key) {
+  const a = ARCHIVES[key];
+  if (!a) return;
+
+  document.getElementById('archiveModalIcon').textContent = a.icon;
+  document.getElementById('archiveModalIcon').style.background = a.iconBg;
+  document.getElementById('archiveModalName').textContent = a.name;
+  document.getElementById('archiveModalSub').textContent = a.sub;
+
+  const worksEl = document.getElementById('archiveWorks');
+  worksEl.innerHTML = a.works.map((w, i) => `
+    <div class="archive-work-item" onclick="window.open('${a.url}','_blank')">
+      <div class="awi-left">
+        <div class="awi-num">${String(i+1).padStart(2,'0')}</div>
+        <div class="awi-dot" style="background:${w.color}"></div>
+        <div class="awi-info">
+          <div class="awi-title">${w.title}</div>
+          <div class="awi-cat">${w.cat}</div>
+        </div>
+      </div>
+      <div class="awi-right">
+        <div class="awi-year">${w.year}</div>
+        <div class="awi-arrow">↗</div>
+      </div>
+    </div>
+  `).join('');
+
+  document.getElementById('archiveModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+/* ─── 모달 닫기 ─── */
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleBackdropClick(e, id) {
+  if (e.target.id === id) closeModal(id);
+}
+
+/* ─── ESC 키 닫기 ─── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    closeModal('cardModal');
+    closeModal('archiveModal');
+  }
+});
+
+/* ── FILTER + PAGINATION ── */
+var PER_PAGE = 15;
+var _pg = 1, _src = 'all', _tag = 'all', _col = 'all', _q = '';
+
+function _refresh(pg) {
+  _pg = pg || 1;
+  var all = document.querySelectorAll('.card');
+  var show = [];
+  for (var i = 0; i < all.length; i++) {
+    var c = all[i];
+    c.style.display = 'none';
+    var src = c.getAttribute('data-source') || '';
+    var hue = c.getAttribute('data-color-hue') || '';
+    var ttl = (c.getAttribute('data-title') || '').toLowerCase();
+    var ok = true;
+    if (_src === 'kr')     ok = ok && src === 'kr';
+    if (_src === 'global') ok = ok && src === 'global';
+    if (_src === 'new')    ok = ok && c.getAttribute('data-new') === 'true';
+    if (_tag !== 'all') {
+      var tels = c.querySelectorAll('.card-tag');
+      var found = false;
+      for (var j = 0; j < tels.length; j++) {
+        if (tels[j].textContent.trim() === _tag) { found = true; break; }
+      }
+      ok = ok && found;
+    }
+    if (_col !== 'all') ok = ok && hue === _col;
+    if (_q)             ok = ok && ttl.indexOf(_q) >= 0;
+    if (ok) show.push(c);
+  }
+  var total = show.length;
+  var totalPg = Math.max(1, Math.ceil(total / PER_PAGE));
+  _pg = Math.min(Math.max(1, _pg), totalPg);
+  var start = (_pg - 1) * PER_PAGE;
+  var end   = start + PER_PAGE;
+  for (var k = start; k < end && k < show.length; k++) {
+    show[k].style.display = '';
+  }
+  _pgUI(_pg, totalPg, total);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function _pgUI(page, total, cnt) {
+  var pg = document.getElementById('pagination');
+  if (!pg) return;
+  if (total <= 1) { pg.innerHTML = ''; return; }
+  var h = '<span class="pg-info">' + cnt + '개</span>';
+  h += '<button class="pg-btn" onclick="_refresh(' + (page - 1) + ')"' + (page === 1 ? ' disabled' : '') + '>&#8249;</button>';
+  var s = Math.max(1, page - 2);
+  var e = Math.min(total, s + 4);
+  if (e - s < 4) s = Math.max(1, e - 4);
+  if (s > 1) {
+    h += '<button class="pg-btn" onclick="_refresh(1)">1</button>';
+    if (s > 2) h += '<span class="pg-info">…</span>';
+  }
+  for (var i = s; i <= e; i++) {
+    h += '<button class="pg-btn' + (i === page ? ' active' : '') + '" onclick="_refresh(' + i + ')">' + i + '</button>';
+  }
+  if (e < total) {
+    if (e < total - 1) h += '<span class="pg-info">…</span>';
+    h += '<button class="pg-btn" onclick="_refresh(' + total + ')">' + total + '</button>';
+  }
+  h += '<button class="pg-btn" onclick="_refresh(' + (page + 1) + ')"' + (page === total ? ' disabled' : '') + '>&#8250;</button>';
+  h += '<span class="pg-info">/ ' + total + 'p</span>';
+  pg.innerHTML = h;
+}
+
+function renderPage(pg) { _refresh(pg); }
+
+function filterByColor(hue, el) {
+  _col = hue;
+  document.querySelectorAll('#colorFilters .color-swatch, #colorFilters .color-swatch-all')
+    .forEach(function (b) { b.classList.remove('active'); });
+  el.classList.add('active');
+  _refresh(1);
+}
+
+function filterByTag(tag, btn) {
+  _tag = tag;
+  document.querySelectorAll('.tag-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  _refresh(1);
+}
+
+function filterCards(type, btn) {
+  _src = type;
+  document.querySelectorAll('.filter-btn').forEach(function (b) { b.classList.remove('active'); });
+  btn.classList.add('active');
+  _refresh(1);
+}
+
+function searchCards(q) {
+  _q = q.toLowerCase();
+  _refresh(1);
+}
+
+function toggleAcc(id) {
+  var body = document.getElementById('acc-body-' + id);
+  var arrow = document.getElementById('acc-arrow-' + id);
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open');
+  arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
+}
+
+document.addEventListener('DOMContentLoaded', function () { _refresh(1); });
+</script>
+
+</body>
+</html>
