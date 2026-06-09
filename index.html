@@ -2520,6 +2520,30 @@ var TAG_RULES = [
   { tag: '캐릭터·IP',      keys: ['kakao','character','mascot','캐릭터','friends!','norangtongdak','닭','farm','lego','paper planes','luke'] },
 ];
 
+var STUDIO_TAGS = {
+  'SOLID VFX':      'VFX·버추얼',
+  '자이언트스텝':    'VFX·버추얼',
+  'RGB POST':       'VFX·버추얼',
+  'HELIX D Studio': 'VFX·버추얼',
+  "d'strict":       '몰입형 설치',
+  'teamLab':        '몰입형 설치',
+  'Refik Anadol Studio': 'AI·제너러티브',
+  '이마고픽쳐스':    '브랜드 캠페인',
+  '제이더블유미디어': '브랜드 캠페인',
+  '디보프로덕션':    '브랜드 캠페인',
+  '미디어밸런스':    '브랜드 캠페인',
+  'The Authentic':  '브랜드 캠페인',
+  'Flovah':         '브랜드 캠페인',
+  'MOCA':           '채널 아이덴티티',
+  'auv':            '브랜드 캠페인',
+  '아요바':          '브랜드 캠페인',
+  'Active Theory':  '인터랙티브',
+  'B-Reel':         '인터랙티브',
+  'ManvsMachine':   'VFX·버추얼',
+  'The Mill':       'VFX·버추얼',
+  'Hush':           '인터랙티브',
+};
+
 var HUE_COLORS = {
   red: '#e83030', orange: '#e87830', yellow: '#c9a800',
   green: '#3ca050', teal: '#20a0a0', blue: '#2060d0',
@@ -2553,6 +2577,11 @@ function _autoTagCards() {
         if (title.indexOf(rule.keys[i]) >= 0) { matched.push(rule.tag); break; }
       }
     });
+    if (!matched.length) {
+      var srcEl = c.querySelector('.card-source');
+      var studio = srcEl ? srcEl.textContent.trim() : '';
+      if (STUDIO_TAGS[studio]) matched.push(STUDIO_TAGS[studio]);
+    }
     c.setAttribute('data-tags', matched.join(','));
     if (matched.length) {
       var wrap = document.createElement('div');
