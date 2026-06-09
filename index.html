@@ -2493,6 +2493,29 @@ var TAG_RULES = [
   { tag: '캐릭터·IP',      keys: ['kakao','character','mascot','캐릭터','friends!','norangtongdak','닭','farm','lego','paper planes','luke'] },
 ];
 
+var HUE_COLORS = {
+  red: '#e83030', orange: '#e87830', yellow: '#c9a800',
+  green: '#3ca050', teal: '#20a0a0', blue: '#2060d0',
+  purple: '#8040c0', pink: '#d040a0',
+  achromatic: 'linear-gradient(135deg,#555 50%,#aaa 50%)'
+};
+
+function _addColorDots() {
+  document.querySelectorAll('.card').forEach(function(c) {
+    if (c.querySelector('.card-meta-bar')) return;
+    var hue = c.getAttribute('data-color-hue');
+    var color = HUE_COLORS[hue];
+    if (!color) return;
+    var bar = document.createElement('div');
+    bar.className = 'card-meta-bar';
+    var dot = document.createElement('div');
+    dot.className = 'card-color-dot';
+    dot.style.background = color;
+    bar.appendChild(dot);
+    c.appendChild(bar);
+  });
+}
+
 function _autoTagCards() {
   document.querySelectorAll('.card').forEach(function(c) {
     if (c.getAttribute('data-tags')) return;
@@ -2508,6 +2531,7 @@ function _autoTagCards() {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+  _addColorDots();
   _autoTagCards();
   _refresh(1);
   // 7일 초과 카드의 NEW THIS WEEK 배지 숨기기
