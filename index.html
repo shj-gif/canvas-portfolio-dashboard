@@ -1656,6 +1656,7 @@
     <div class="card-hover-hint"><span>상세 보기</span></div>
   </div>
 </div>
+<div id="pagination" class="pagination"></div>
 
 <!-- 국내 accordion -->
 <div class="acc-wrap">
@@ -2398,12 +2399,8 @@ function _refresh(pg) {
     if (_src === 'global') ok = ok && src === 'global';
     if (_src === 'new')    ok = ok && c.getAttribute('data-new') === 'true';
     if (_tag !== 'all') {
-      var tels = c.querySelectorAll('.card-tag');
-      var found = false;
-      for (var j = 0; j < tels.length; j++) {
-        if (tels[j].textContent.trim() === _tag) { found = true; break; }
-      }
-      ok = ok && found;
+      var cardTags = (c.getAttribute('data-tags') || '').split(',');
+      ok = ok && cardTags.indexOf(_tag) >= 0;
     }
     if (_col !== 'all') ok = ok && hue === _col;
     if (_q)             ok = ok && ttl.indexOf(_q) >= 0;
@@ -2483,7 +2480,35 @@ function toggleAcc(id) {
   arrow.style.transform = isOpen ? '' : 'rotate(90deg)';
 }
 
+var TAG_RULES = [
+  { tag: '몰입형 설치',     keys: ['immersive','exhibition','observatory','sphere residency','installation','몰입','설치','spatial','serre','futuroscope','infinity wall','living-architecture','casa ','mondes'] },
+  { tag: '브랜드 캠페인',   keys: ['campaign','brand film','promotion','advertising','anniversary','celebration','bmw','chanel','rippling','하기스','nexen','hyundai','emulait','매머드','stellix','orderchaos','harmonic','google','netflix','barclays','canva','affinity','royal mint','forever metal','feels like','imagine'] },
+  { tag: '채널 아이덴티티', keys: ['channel','network design','network-design','broadcast','sports network','channel id','ident','oap','ena-sports','ena sports','showreel','reel'] },
+  { tag: '모션 타이틀',     keys: ['main title','title sequence','타이틀','season ','season6','season5','opener','intro film','first look'] },
+  { tag: '인터랙티브',      keys: ['interactive','pinball','patronus','인터랙티브','experience','lego x','curiosity','discover your'] },
+  { tag: 'AI·제너러티브',   keys: ['generative','unsupervised','diffusion','neural','제너러티브','ai art','murmuration','dissipative','pixelography','alone-together','hallucination','machine-'] },
+  { tag: 'VFX·버추얼',     keys: ['vfx','virtual production','버추얼','visual effects','cgi','motion graphics','destination bc','wilderness'] },
+  { tag: '게임·e스포츠',    keys: ['kart rider','drift','esport','e-sport','게임','league of','worlds 20','riot','trade every play','alienware','area-51','diablo','demon meat'] },
+  { tag: '제품 영상',       keys: ['product','packaging','buds','laptop','oneplus','casetify','cos:','cos '] },
+  { tag: '캐릭터·IP',      keys: ['kakao','character','mascot','캐릭터','friends!','norangtongdak','닭','farm','lego','paper planes','luke'] },
+];
+
+function _autoTagCards() {
+  document.querySelectorAll('.card').forEach(function(c) {
+    if (c.getAttribute('data-tags')) return;
+    var title = (c.getAttribute('data-title') || '').toLowerCase();
+    var matched = [];
+    TAG_RULES.forEach(function(rule) {
+      for (var i = 0; i < rule.keys.length; i++) {
+        if (title.indexOf(rule.keys[i]) >= 0) { matched.push(rule.tag); break; }
+      }
+    });
+    c.setAttribute('data-tags', matched.join(','));
+  });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+  _autoTagCards();
   _refresh(1);
   // 7일 초과 카드의 NEW THIS WEEK 배지 숨기기
   const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
