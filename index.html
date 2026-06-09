@@ -398,7 +398,7 @@
 
 <div class="gallery" id="gallery">
   <div class="card" data-id="new_9d555f281860" data-color-hue="teal" data-source="kr" data-new="true" data-tags="몰입형 설치" data-title="국립제주박물관 영주십경" onclick="window.open('https://a-frame.kr/JejuNationalMuseum_projection_mapping','_blank')">
-    <img class="card-thumb" src="https://cdn.imweb.me/thumbnail/20260427/be104fc509af2.png" alt="국립제주박물관 영주십경" loading="lazy" />
+    <img class="card-thumb" src="https://cdn.imweb.me/upload/S202406130eb1607e6ad77/c54429ad99e99.png" alt="국립제주박물관 영주십경" loading="lazy" />
     <div class="card-overlay">
       <div class="card-title">국립제주박물관 영주십경</div>
       <div class="card-date">2026-06-09</div>
@@ -2586,26 +2586,28 @@ function _addColorDots() {
 
 function _autoTagCards() {
   document.querySelectorAll('.card').forEach(function(c) {
-    if (c.getAttribute('data-tags')) return;
-    var title = (c.getAttribute('data-title') || '').toLowerCase();
-    var matched = [];
-    TAG_RULES.forEach(function(rule) {
-      for (var i = 0; i < rule.keys.length; i++) {
-        if (title.indexOf(rule.keys[i]) >= 0) { matched.push(rule.tag); break; }
+    if (!c.getAttribute('data-tags')) {
+      var title = (c.getAttribute('data-title') || '').toLowerCase();
+      var matched = [];
+      TAG_RULES.forEach(function(rule) {
+        for (var i = 0; i < rule.keys.length; i++) {
+          if (title.indexOf(rule.keys[i]) >= 0) { matched.push(rule.tag); break; }
+        }
+      });
+      if (!matched.length) {
+        var srcEl = c.querySelector('.card-source');
+        var studio = srcEl ? srcEl.textContent.trim() : '';
+        if (STUDIO_TAGS[studio]) matched.push(STUDIO_TAGS[studio]);
       }
-    });
-    if (!matched.length) {
-      var srcEl = c.querySelector('.card-source');
-      var studio = srcEl ? srcEl.textContent.trim() : '';
-      if (STUDIO_TAGS[studio]) matched.push(STUDIO_TAGS[studio]);
+      c.setAttribute('data-tags', matched.join(','));
     }
-    c.setAttribute('data-tags', matched.join(','));
-    if (matched.length) {
+    var primaryTag = (c.getAttribute('data-tags') || '').split(',')[0];
+    if (primaryTag && !c.querySelector('.card-tags')) {
       var wrap = document.createElement('div');
       wrap.className = 'card-tags';
       var el = document.createElement('span');
       el.className = 'card-tag';
-      el.textContent = matched[0];
+      el.textContent = primaryTag;
       wrap.appendChild(el);
       c.appendChild(wrap);
     }
