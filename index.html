@@ -2527,6 +2527,15 @@ function _autoTagCards() {
       }
     });
     c.setAttribute('data-tags', matched.join(','));
+    if (matched.length) {
+      var wrap = document.createElement('div');
+      wrap.className = 'card-tags';
+      var el = document.createElement('span');
+      el.className = 'card-tag';
+      el.textContent = matched[0];
+      wrap.appendChild(el);
+      c.appendChild(wrap);
+    }
   });
 }
 
