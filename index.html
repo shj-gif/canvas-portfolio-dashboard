@@ -303,13 +303,13 @@
 
 <!-- ══ STATS ══ -->
 <div class="stats-bar">
-  <div class="stat-item"><div class="stat-value accent">101</div><div class="stat-label">총 수집 작품</div></div>
+  <div class="stat-item"><div class="stat-value accent">102</div><div class="stat-label">총 수집 작품</div></div>
   <div class="stat-item"><div class="stat-value red">0</div><div class="stat-label">오늘 신규</div></div>
   <div class="stat-item stat-hoverable">
-    <div class="stat-value accent2">36</div>
+    <div class="stat-value accent2">37</div>
     <div class="stat-label">모니터링 스튜디오</div>
     <div class="stat-tooltip">
-      <div class="stt-group">🇰🇷 국내 (24)</div>
+      <div class="stt-group">🇰🇷 국내 (25)</div>
       <div class="stt-item">자이언트스텝</div>
       <div class="stt-item">아요바</div>
       <div class="stt-item">SOLID VFX</div>
@@ -334,6 +334,7 @@
       <div class="stt-item">Flovah</div>
       <div class="stt-item">AFRAME</div>
       <div class="stt-item">COLD FRAME</div>
+      <div class="stt-item">에임드</div>
       <div class="stt-group">🌐 해외 (12)</div>
       <div class="stt-item">teamLab</div>
       <div class="stt-item">Moment Factory</div>
@@ -399,6 +400,14 @@
 </div>
 
 <div class="gallery" id="gallery">
+  <div class="card" data-id="new_aimed_exhibition" data-color-hue="teal" data-source="kr" data-new="true" data-tags="몰입형 설치" data-title="에임드 Exhibition 레퍼런스" onclick="window.open('https://www.aimed.or.kr/reference-exhibition','_blank')">
+    <img class="card-thumb" src="https://cdn.imweb.me/thumbnail/20250519/8451cbfb0a704.jpg" alt="에임드 Exhibition 레퍼런스" loading="lazy" />
+    <div class="card-overlay">
+      <div class="card-title">에임드 Exhibition 레퍼런스</div>
+      <div class="card-date">2026-06-10</div>
+    </div>
+    <div class="card-source">에임드</div>
+  </div>
   <div class="card" data-id="new_c174f4b6ed37" data-color-hue="achromatic" data-color-hue="achromatic" data-source="kr" data-new="true" data-title="Skull Match" onclick="window.open('https://www.flovah.com/work/skull-match','_blank')">
     <img class="card-thumb" src="https://www.flovah.com/work/skull-match/00-hero/hero.webp" alt="Skull Match" loading="lazy" />
     <div class="card-overlay">
@@ -1770,7 +1779,7 @@
 <div class="acc-wrap">
   <div class="acc-header" id="acc-hdr-kr" onclick="toggleAcc('kr')">
     <span class="acc-label">🇰🇷 국내</span>
-    <span class="acc-sub">24개 스튜디오</span>
+    <span class="acc-sub">25개 스튜디오</span>
     <span class="acc-arrow" id="acc-arrow-kr">›</span>
   </div>
   <div class="acc-body" id="acc-body-kr">
@@ -1917,6 +1926,12 @@
         <div class="archive-icon" style="background:rgba(100,180,255,0.1);">🇰🇷</div>
         <div class="archive-name">COLD FRAME</div>
         <div class="archive-meta">브랜드 필름 · 서울</div>
+        <div class="archive-view-hint">포트폴리오 보기 →</div>
+      </div>
+      <div class="archive-card" onclick="window.open('https://www.aimed.or.kr/reference','_blank')">
+        <div class="archive-icon" style="background:rgba(0,180,120,0.1);">🇰🇷</div>
+        <div class="archive-name">에임드</div>
+        <div class="archive-meta">AV 통합 · 공간미디어 · 전시 · 서울</div>
         <div class="archive-view-hint">포트폴리오 보기 →</div>
       </div>
     </div>
@@ -2648,6 +2663,7 @@ var STUDIO_TAGS = {
   'The Mill':       'VFX·버추얼',
   'Hush':           '인터랙티브',
   'Clim Studio':    '브랜드 캠페인',
+  '에임드':         '몰입형 설치',
 };
 
 var HUE_COLORS = {
